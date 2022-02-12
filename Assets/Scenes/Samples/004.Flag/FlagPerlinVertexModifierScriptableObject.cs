@@ -1,6 +1,6 @@
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "FlagPerlinVertexModifier", menuName = "Vt/ScriptableObjects/FlagPerlinVertexModifier", order = 1)]
+[CreateAssetMenu(fileName = "FlagPerlinVertexModifier", menuName = "TSW/ProcMesh/FlagPerlinVertexModifier", order = 1)]
 public class FlagPerlinVertexModifierScriptableObject : PerlinVertexModifierScriptableObject
 {
     [SerializeField][Range(1f, 5f)] protected float windForce = 5f;

@@ -205,7 +205,7 @@ public class ProcPlaneBehaviour : MonoBehaviour
         }
     }
 
-    [MenuItem("GameObject/3D Object/Vt/Create ProceduralPlane", false, 0)]
+    [MenuItem("GameObject/3D Object/TSW/ProcMesh/Create ProceduralPlane", false, 0)]
     static void CreateCustomGameObject(MenuCommand menuCommand)
     {
         ProcPlaneCreateParameters createInfo = new ProcPlaneCreateParameters(

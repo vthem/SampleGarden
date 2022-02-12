@@ -60,7 +60,7 @@ public class VertexModifierBase :  IVertexModifier
 }
 
 [System.Serializable]
-[CreateAssetMenu(fileName = "VertexModifier", menuName = "Vt/ScriptableObjects/VertexModifier", order = 1)]
+[CreateAssetMenu(fileName = "VertexModifier", menuName = "TSW/ProcMesh/VertexModifier", order = 1)]
 public class VertexModifierScriptableObject : ScriptableObject, IVertexModifier
 {
     public float XSize { get => xSize; set { (HasChanged, xSize) = xSize.SetValue(value); } }

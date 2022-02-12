@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "PerlinVertexModifier", menuName = "Vt/ScriptableObjects/PerlinVertexModifier", order = 1)]
+[CreateAssetMenu(fileName = "PerlinVertexModifier", menuName = "TSW/ProcMesh/PerlinVertexModifier", order = 1)]
 public class PerlinVertexModifierScriptableObject : VertexModifierScriptableObject
 {
     public override bool Initialize()
