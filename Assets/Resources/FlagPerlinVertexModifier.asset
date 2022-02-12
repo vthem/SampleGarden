@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b0aae5a887609d45a7a3557aac2559a, type: 3}
+  m_Name: FlagPerlinVertexModifier
+  m_EditorClassIdentifier: 
+  xSize: 3
+  zSize: 2
+  lod: 4
+  perlinOffset: {x: 6, y: 0, z: 5.03}
+  perlinScale: 2.63
+  localPosition: {x: -6.2, y: 10.52, z: 3.4}
+  windForce: 3.27
+  yScale: 1.25
+  xPerlinScale:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 2.8807464
+      outSlope: 2.8807464
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.74715316
+      value: 2.1523588
+      inSlope: -0.015850985
+      outSlope: -0.015850985
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.5713264
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1.0554688
+      value: 0.65546334
+      inSlope: -4.855075
+      outSlope: -4.855075
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
