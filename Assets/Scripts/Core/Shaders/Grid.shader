@@ -1,6 +1,6 @@
 // from https://gamedev.stackexchange.com/questions/141916/antialiasing-shader-grid-lines
 
-Shader "Vt/Unlit/Grid"
+Shader "TSW/Unlit/Grid"
 {
     Properties
     {
