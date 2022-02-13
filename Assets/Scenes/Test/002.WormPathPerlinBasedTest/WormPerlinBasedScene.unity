@@ -123,7 +123,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &259994780
+--- !u!1 &1702383873
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -131,35 +131,43 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 259994782}
-  - component: {fileID: 259994781}
-  - component: {fileID: 259994783}
+  - component: {fileID: 1702383875}
+  - component: {fileID: 1702383874}
   m_Layer: 0
-  m_Name: GameObject
+  m_Name: Worm
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &259994781
+--- !u!114 &1702383874
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 259994780}
+  m_GameObject: {fileID: 1702383873}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7dd2ccbdad2d11241b4a3249f7c90bfd, type: 3}
+  m_Script: {fileID: 11500000, guid: 870634d25fbf3ec489a6eb4b513ffeec, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!4 &259994782
+  config:
+    worldPosZ: 9.21
+    xyOffset: 1.2943875
+    radiusOffset: 2.397987
+    wormRadius: 0.1
+    deviation: 1
+    perlinScaleZ: 1
+    length: 100
+    stepLength: 0.01
+--- !u!4 &1702383875
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 259994780}
+  m_GameObject: {fileID: 1702383873}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
@@ -167,20 +175,3 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &259994783
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 259994780}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 870634d25fbf3ec489a6eb4b513ffeec, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  worldPosZ: 338.75
-  xyOffset: 1.2943875
-  pointCount: 1021
-  length: 8.13
-  wormRadius: 0.2
