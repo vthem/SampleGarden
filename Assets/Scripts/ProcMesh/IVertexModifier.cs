@@ -10,4 +10,6 @@ public interface IVertexModifier
 
     bool Initialize();
     Vector3 Vertex(int x, int z);
+
+	Vector3 Normal(int x, int z);
 }

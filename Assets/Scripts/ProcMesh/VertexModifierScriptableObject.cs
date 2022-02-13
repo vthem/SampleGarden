@@ -27,6 +27,11 @@ public class VertexModifierBase :  IVertexModifier
         return new Vector3(xVal, 0, zVal);
     }
 
+	public virtual Vector3 Normal(int x, int z)
+	{
+		return Vector3.up;
+	}
+
     public bool HasChanged { get; set; }
 
     public int VertexCount1D => VertexModifier.ComputeVertexCount1D(lod);
@@ -83,7 +88,12 @@ public class VertexModifierScriptableObject : ScriptableObject, IVertexModifier
         return new Vector3(xVal, 0, zVal);
     }
 
-    public bool HasChanged { get; set; }
+	public virtual Vector3 Normal(int x, int z)
+	{
+		return Vector3.up;
+	}
+
+	public bool HasChanged { get; set; }
 
     public int VertexCount1D => VertexModifier.ComputeVertexCount1D(lod);
 

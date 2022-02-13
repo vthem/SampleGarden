@@ -15,6 +15,7 @@ public struct ProcPlaneCreateParameters
     public Transform parent;
     public MeshLodInfo lodInfo;
     public IVertexModifier vertexModifier;
+	public bool recalculateNormals;
 
     public ProcPlaneCreateParameters(string name,
                                      string materialName,
@@ -25,12 +26,15 @@ public struct ProcPlaneCreateParameters
         this.vertexModifier = vertexModifier;
         parent = null;
         lodInfo.leftLod = lodInfo.rightLod = lodInfo.frontLod = lodInfo.backLod = -1;
-    }
+		recalculateNormals = true;
+	}
 }
 
 [ExecuteInEditMode]
 public class ProcPlaneBehaviour : MonoBehaviour
 {
+	public bool recalculateNormals = true;
+
     public static ProcPlaneBehaviour Create(ProcPlaneCreateParameters createParams)
     {
         var obj = new GameObject(createParams.name);
@@ -51,6 +55,7 @@ public class ProcPlaneBehaviour : MonoBehaviour
         var procPlane = obj.AddComponent<ProcPlaneBehaviour>();
         procPlane.lodInfo = createParams.lodInfo;
         procPlane.vertexModifier = createParams.vertexModifier;
+		procPlane.recalculateNormals = createParams.recalculateNormals;
         var customVertexModifier = createParams.vertexModifier as VertexModifierScriptableObject;
         procPlane.customVertexModifier = customVertexModifier;
 
@@ -113,10 +118,11 @@ public class ProcPlaneBehaviour : MonoBehaviour
 
             objToParent = Matrix4x4.TRS(transform.localPosition, Quaternion.identity, Vector3.one);
 
+			meshGenerateParameter.recalculateNormals = recalculateNormals;
             if (benchEnable)
             {
                 SysStopwatch sw = SysStopwatch.StartNew();
-                ProceduralPlaneMesh.Generate(meshGenerateParameter);
+				ProceduralPlaneMesh.Generate(meshGenerateParameter);
                 benchElaspedMilliseconds += sw.ElapsedMilliseconds;
                 benchTotalVerticesProcessed += customVertexModifier.VertexCount2D;
             }
@@ -144,9 +150,9 @@ public class ProcPlaneBehaviour : MonoBehaviour
         mesh.MarkDynamic();
         meshGenerateParameter.mesh = mesh;
         meshGenerateParameter.vertexModifier = vertexModifier;
-        meshGenerateParameter.lodInfo = lodInfo;
+        meshGenerateParameter.lodInfo = lodInfo;		
 
-        meshGenerateParameter.vertices = new NativeArray<ExampleVertex>(vertexModifier.VertexCount2D, Allocator.Persistent);
+		meshGenerateParameter.vertices = new NativeArray<Vertex>(vertexModifier.VertexCount2D, Allocator.Persistent);
         meshGenerateParameter.indices = new NativeArray<ushort>(vertexModifier.IndiceCount, Allocator.Persistent);
     }
 

@@ -5,9 +5,10 @@ using UnityEngine;
 using UnityEngine.Rendering;
 
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
-struct ExampleVertex
+struct Vertex
 {
     public Vector3 pos;
+	public Vector3 normal;
     public Vector2 uv;
 }
 
@@ -43,21 +44,23 @@ public struct MeshLodInfo
 struct MeshGenerateParameter
 {
     public Mesh mesh;
-    public NativeArray<ExampleVertex> vertices;
+    public NativeArray<Vertex> vertices;
     public NativeArray<ushort> indices;
     public MeshLodInfo lodInfo;
     public IVertexModifier vertexModifier;
+	public bool recalculateNormals;
 }
 
 class ProceduralPlaneMesh
 {
-    private static VertexAttributeDescriptor[] layout = new[]
-    {
-        new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
-        new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2)
-    };
+	private static VertexAttributeDescriptor[] vertexLayout = new[]
+{
+		new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
+		new VertexAttributeDescriptor(VertexAttribute.Normal, VertexAttributeFormat.Float32, 3),
+		new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2)
+	};
 
-    public static void Generate(MeshGenerateParameter gp)
+	public static void Generate(MeshGenerateParameter gp)
     {
         var vMod = gp.vertexModifier;
         vMod.Initialize();
@@ -73,9 +76,10 @@ class ProceduralPlaneMesh
         var frontLod = gp.lodInfo.frontLod;
         var rightLod = gp.lodInfo.rightLod;
         var backLod = gp.lodInfo.backLod;
+		var recalculateNormals = gp.recalculateNormals;
 
-        // specify vertex count and layout
-        mesh.SetVertexBufferParams(vertexCount, layout);
+		// specify vertex count and layout
+		mesh.SetVertexBufferParams(vertexCount, vertexLayout);
 
         // seams first
         // +  +  + -> lod 1
@@ -184,10 +188,11 @@ class ProceduralPlaneMesh
         mesh.subMeshCount = 1;
         mesh.SetSubMesh(0, new SubMeshDescriptor(0, indiceCount, MeshTopology.Triangles));
         mesh.RecalculateBounds();
-        mesh.RecalculateNormals();
+		if (recalculateNormals)
+			mesh.RecalculateNormals();
     }
 
-    private static NativeArray<ExampleVertex> WeightedComputeVertexX(NativeArray<ExampleVertex> verts, int x, int xCount, int z, int modulus)
+    private static NativeArray<Vertex> WeightedComputeVertexX(NativeArray<Vertex> verts, int x, int xCount, int z, int modulus)
     {
         var i = x + z * xCount;
         var remainder = i % modulus;
@@ -195,14 +200,15 @@ class ProceduralPlaneMesh
             return verts;
         var prevKnown = (x - remainder) + z * xCount; // i - remainder
         var nextKnown = (x - remainder + modulus) + z * xCount; // i - remainder + modulus
-        verts[i] = new ExampleVertex {
+        verts[i] = new Vertex {
             pos = verts[prevKnown].pos + (verts[nextKnown].pos - verts[prevKnown].pos) * remainder / (float)modulus,
-            uv = new Vector2(x / (float)(xCount - 1), z / (float)(xCount - 1))
+			normal = verts[prevKnown].normal + (verts[nextKnown].normal - verts[prevKnown].normal) * remainder / (float)modulus,
+			uv = new Vector2(x / (float)(xCount - 1), z / (float)(xCount - 1))
         };
         return verts;
     }
 
-    private static NativeArray<ExampleVertex> WeightedComputeVertexZ(NativeArray<ExampleVertex> verts, int x, int xCount, int z, int modulus)
+    private static NativeArray<Vertex> WeightedComputeVertexZ(NativeArray<Vertex> verts, int x, int xCount, int z, int modulus)
     {
         var i = x + z * xCount;
         var remainder = i % modulus;
@@ -210,21 +216,23 @@ class ProceduralPlaneMesh
             return verts;
         var prevKnown = x + (z - remainder) * xCount; // i - remainder
         var nextKnown = x + (z - remainder + modulus) * xCount; // i - remainder + modulus
-        verts[i] = new ExampleVertex {
+        verts[i] = new Vertex {
             pos = verts[prevKnown].pos + (verts[nextKnown].pos - verts[prevKnown].pos) * remainder / (float)modulus,
-            uv = new Vector2(x / (float)(xCount - 1), z / (float)(xCount - 1))
+			normal = verts[prevKnown].normal + (verts[nextKnown].normal - verts[prevKnown].normal) * remainder / (float)modulus,
+			uv = new Vector2(x / (float)(xCount - 1), z / (float)(xCount - 1))
         };
         return verts;
     }
 
-    private static NativeArray<ExampleVertex> ComputeVertex(NativeArray<ExampleVertex> verts, int x, int xCount, int z, IVertexModifier vertexModifier)
+    private static NativeArray<Vertex> ComputeVertex(NativeArray<Vertex> verts, int x, int xCount, int z, IVertexModifier vertexModifier)
     {
         var i = x + z * xCount;
-        //var xPos = xStart + x * xDelta;
-        //var zPos = zStart + z * zDelta;
-        verts[i] = new ExampleVertex {
-            pos = vertexModifier.Vertex(x, z),
-            uv = new Vector2(x / (float)(xCount-1), z / (float)(xCount-1))
+		//var xPos = xStart + x * xDelta;
+		//var zPos = zStart + z * zDelta;
+		verts[i] = new Vertex {
+			pos = vertexModifier.Vertex(x, z),
+			normal = vertexModifier.Normal(x, z),
+			uv = new Vector2(x / (float)(xCount-1), z / (float)(xCount-1))
         };
         return verts;
     }
