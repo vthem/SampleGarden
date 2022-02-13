@@ -153,14 +153,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   config:
-    worldPosZ: 9.21
+    worldPosZ: 0
     xyOffset: 1.2943875
     radiusOffset: 2.397987
     wormRadius: 0.1
     deviation: 1
     perlinScaleZ: 1
-    length: 100
-    stepLength: 0.01
+    length: 10
+    stepLength: 1
+  interpolate: 0
+  inverseStep: 1
 --- !u!4 &1702383875
 Transform:
   m_ObjectHideFlags: 0

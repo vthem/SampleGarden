@@ -5,25 +5,57 @@ namespace _002.WormPathPerlinBasedTest
 	public class GizmoDrawerBehaviour : MonoBehaviour
 	{
 		public PerlinWormConfig config;
+		public bool interpolate = false;
+		[Range(1, 1000)]
+		public int inverseStep = 1;
+		[Range(0, 1)]
+		public float t;
 
 		private void OnDrawGizmos()
 		{
 			var worm = new PerlinWorm();
 			worm.config = config;
-			worm.BuildPointsArray();
+			worm.Update();
 
-			void GizmoDrawCircle(Vector3 forward, Vector3 up, Vector3 position, float radius, int segmentCount)
+			if (interpolate)
 			{
-				Vector3 prev = Vector3.Cross(forward, up);
-				Quaternion rot = Quaternion.AngleAxis(360f / segmentCount, forward);
-				for (int i = 0; i < segmentCount; ++i)
-				{
-					Vector3 cur = rot * prev;
-					Gizmos.DrawLine(position + prev * radius, position + cur * radius);
-					prev = cur;
-				}
+				DrawInterpolated(worm);
 			}
+			else
+			{
+				DrawIndexed(worm);
+			}
+		}
 
+		void GizmoDrawCircle(Vector3 forward, Vector3 up, Vector3 position, float radius, int segmentCount)
+		{
+			Vector3 prev = Vector3.Cross(forward, up);
+			Quaternion rot = Quaternion.AngleAxis(360f / segmentCount, forward);
+			for (int i = 0; i < segmentCount; ++i)
+			{
+				Vector3 cur = rot * prev;
+				Gizmos.DrawLine(position + prev * radius, position + cur * radius);
+				prev = cur;
+			}
+		}
+
+		void DrawInterpolated(PerlinWorm worm)
+		{
+			if (inverseStep <= 0)
+				return;
+
+			float step = 1f / inverseStep;
+			for (float t = step; t <= 1f; t += step)
+			{
+				Gizmos.DrawLine(worm.GetPosition(t - step), worm.GetPosition(t));
+				Vector3 forward = worm.GetForward(t);
+				Vector3 up = worm.GetUp(t);
+				GizmoDrawCircle(forward, up, worm.GetPosition(t), config.wormRadius, 20);
+			}
+		}
+
+		void DrawIndexed(PerlinWorm worm)
+		{
 			for (int i = 1; i < worm.Count; ++i)
 			{
 				//float radius = Mathf.PerlinNoise(0f, i * config.step + config.worldPosZ + config.radiusOffset);
@@ -32,6 +64,8 @@ namespace _002.WormPathPerlinBasedTest
 				Vector3 up = worm.GetUp(i);
 				GizmoDrawCircle(forward, up, worm.GetPosition(i), config.wormRadius, 20);
 			}
+			Gizmos.color = Color.red;
+			Gizmos.DrawSphere(worm.GetPosition(t), 0.1f);
 		}
 	}
 }

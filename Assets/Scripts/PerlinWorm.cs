@@ -19,30 +19,41 @@ public class PerlinWorm
 {
 	public PerlinWormConfig config;
 
-	private Vector3[] _positionArray;
-	private Vector3[] _upArray;
-	private Vector3[] _forwardArray;
-	private Vector3 _first;
-	private Vector3 _last;
-
 	public int Count => _positionArray.Length;
 
 	public Vector3 GetPosition(int index)
 	{
 		return _positionArray[index];
 	}
+
 	public Vector3 GetUp(int index)
 	{
 		return _upArray[index];
 	}
+
 	public Vector3 GetForward(int index)
 	{
 		return _forwardArray[index];
 	}
 
-	public void BuildPointsArray()
+	public Vector3 GetPosition(float normalizedLength)
+	{		
+		return GetInterpolatedValue(_positionArray, normalizedLength);
+	}
+
+	public Vector3 GetUp(float normalizedLength)
 	{
-		int count = Mathf.FloorToInt(config.length / config.stepLength);
+		return GetInterpolatedValue(_upArray, normalizedLength);
+	}
+
+	public Vector3 GetForward(float normalizedLength)
+	{
+		return GetInterpolatedValue(_forwardArray, normalizedLength);
+	}
+
+	public void Update()
+	{
+		int count = Mathf.CeilToInt(config.length / config.stepLength);
 		if (count < 1)
 		{
 			return;
@@ -92,6 +103,49 @@ public class PerlinWorm
 		}
 	}
 
+#if UNITY_EDITOR
+	public void DrawGizmos()
+	{
+		void GizmoDrawCircle(Vector3 forward, Vector3 up, Vector3 position, float radius, int segmentCount)
+		{
+			Vector3 prev = Vector3.Cross(forward, up);
+			Quaternion rot = Quaternion.AngleAxis(360f / segmentCount, forward);
+			for (int i = 0; i < segmentCount; ++i)
+			{
+				Vector3 cur = rot * prev;
+				Gizmos.DrawLine(position + prev * radius, position + cur * radius);
+				prev = cur;
+			}
+		}
+
+		for (int i = 1; i < Count; ++i)
+		{
+			//float radius = Mathf.PerlinNoise(0f, i * config.step + config.worldPosZ + config.radiusOffset);
+			Gizmos.DrawLine(GetPosition(i - 1), GetPosition(i));
+			Vector3 forward = GetForward(i);
+			Vector3 up = GetUp(i);
+			GizmoDrawCircle(forward, up, GetPosition(i), config.wormRadius, 20);
+		}
+	}
+#endif
+
+	#region private
+	private Vector3[] _positionArray;
+	private Vector3[] _upArray;
+	private Vector3[] _forwardArray;
+	private Vector3 _first;
+	private Vector3 _last;
+
+	private Vector3 GetInterpolatedValue(Vector3[] values, float normalizedLength)
+	{
+		float fIndex = Mathf.Lerp(0, values.Length - 1, normalizedLength);
+		//float length = normalizedLength * config.length;
+		int index = Mathf.FloorToInt(fIndex);
+		if (index >= values.Length - 1)
+			return values[index];
+		float dec = fIndex - index;
+		return Vector3.Lerp(values[index], values[index + 1], dec);
+	}
 	private Vector3 GetPoint(float zWorld, float zLocal)
 	{
 		float x = Perlin(zWorld * config.perlinScaleZ) * config.deviation;
@@ -103,4 +157,5 @@ public class PerlinWorm
 	{
 		return (Mathf.PerlinNoise(0f, t) * 2) - 1f;
 	}
+	#endregion
 }
