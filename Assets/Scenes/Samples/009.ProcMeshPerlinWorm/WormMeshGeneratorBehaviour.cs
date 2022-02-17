@@ -48,23 +48,20 @@ public class WormVertexModifier : VertexModifierBase
 	}
 }
 
-public class ProcMeshWormBehaviour : MonoBehaviour
+public class WormMeshGeneratorBehaviour : MonoBehaviour
 {
-	public PerlinWormConfig wormConfig;
+	
 	public string meshMaterialName = "Grid";
 	[Range(0, 7)] public int lod = 1;
 
 	public int normalRounding = 100;
-	public bool enableDrawGizmos = false;
-
 
 	private ProcPlaneBehaviour[] procPlanes;
-	private PerlinWorm perlinWorm = null;
+	
 	private bool initialized = false;
 
-	public Transform camera;
-	public Transform light;
 
+	private PerlinWorm perlinWorm;
 
 	private void Initialize()
 	{
@@ -73,9 +70,9 @@ public class ProcMeshWormBehaviour : MonoBehaviour
 			return;
 		}
 
+		perlinWorm = FindObjectOfType<WormDataBehaviour>().perlinWorm;
 		procPlanes = new ProcPlaneBehaviour[1];
-		perlinWorm = new PerlinWorm();
-		perlinWorm.config = wormConfig;
+
 		perlinWorm.Update();
 		VertexModifierBase vm = new WormVertexModifier
 		{
@@ -97,9 +94,7 @@ public class ProcMeshWormBehaviour : MonoBehaviour
 
 	private void Update()
 	{
-		Initialize();
-
-		perlinWorm.Update();
+		Initialize();		
 
 		for (int i = 0; i < procPlanes.Length; ++i)
 		{
@@ -108,24 +103,7 @@ public class ProcMeshWormBehaviour : MonoBehaviour
 			vm.HasChanged = true;
 			vm.normalRounding = normalRounding;
 		}
-
-		camera.position = perlinWorm.GetPosition(0);
-		var lookatPoint = camera.position + perlinWorm.GetForward(0) * 10f;
-		camera.LookAt(lookatPoint, Vector3.up);
-		light.position = perlinWorm.GetPosition(0);
 	}
 
-	private void OnDrawGizmosSelected()
-	{
-		if (!enableDrawGizmos)
-			return;
 
-		if (null == perlinWorm)
-		{
-			perlinWorm = new PerlinWorm();
-			perlinWorm.config = wormConfig;
-		}
-		perlinWorm.Update();
-		perlinWorm.DrawGizmos();
-	}
 }

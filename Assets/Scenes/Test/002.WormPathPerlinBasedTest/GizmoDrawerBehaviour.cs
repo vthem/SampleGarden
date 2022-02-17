@@ -47,10 +47,10 @@ namespace _002.WormPathPerlinBasedTest
 			float step = 1f / inverseStep;
 			for (float t = step; t <= 1f; t += step)
 			{
-				Gizmos.DrawLine(worm.GetPosition(t - step), worm.GetPosition(t));
-				Vector3 forward = worm.GetForward(t);
-				Vector3 up = worm.GetUp(t);
-				GizmoDrawCircle(forward, up, worm.GetPosition(t), config.wormRadius, 20);
+				Gizmos.DrawLine(worm.GetPositionNormalized(t - step), worm.GetPositionNormalized(t));
+				Vector3 forward = worm.GetForwardNormalized(t);
+				Vector3 up = worm.GetUpNormalized(t);
+				GizmoDrawCircle(forward, up, worm.GetPositionNormalized(t), config.wormRadius, 20);
 			}
 		}
 
@@ -65,7 +65,7 @@ namespace _002.WormPathPerlinBasedTest
 				GizmoDrawCircle(forward, up, worm.GetPosition(i), config.wormRadius, 20);
 			}
 			Gizmos.color = Color.red;
-			Gizmos.DrawSphere(worm.GetPosition(t), 0.1f);
+			Gizmos.DrawSphere(worm.GetPositionNormalized(t), 0.1f);
 		}
 	}
 }

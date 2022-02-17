@@ -15,6 +15,7 @@ public class PerlinWormConfig
 	public float stepLength = 1f;
 }
 
+[System.Serializable]
 public class PerlinWorm
 {
 	public PerlinWormConfig config;
@@ -36,19 +37,24 @@ public class PerlinWorm
 		return _forwardArray[index];
 	}
 
-	public Vector3 GetPosition(float normalizedLength)
+	public Vector3 GetPositionRelative(float positionZ)
+	{
+		return GetPositionNormalized(Mathf.InverseLerp(0f, config.length, positionZ));
+	}
+
+	public Vector3 GetPositionNormalized(float t)
 	{		
-		return GetInterpolatedValue(_positionArray, normalizedLength);
+		return GetInterpolatedValue(_positionArray, t);
 	}
 
-	public Vector3 GetUp(float normalizedLength)
+	public Vector3 GetUpNormalized(float t)
 	{
-		return GetInterpolatedValue(_upArray, normalizedLength);
+		return GetInterpolatedValue(_upArray, t);
 	}
 
-	public Vector3 GetForward(float normalizedLength)
+	public Vector3 GetForwardNormalized(float t)
 	{
-		return GetInterpolatedValue(_forwardArray, normalizedLength);
+		return GetInterpolatedValue(_forwardArray, t);
 	}
 
 	public void Update()
