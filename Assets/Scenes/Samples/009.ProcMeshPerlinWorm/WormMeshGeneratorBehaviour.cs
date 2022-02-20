@@ -10,14 +10,15 @@ public class WormVertexModifier : VertexModifierBase
 	public PerlinWorm worm;
 	public int index = 0;
 	public int normalRounding = 100;
+	public int vertexCount1D = 0;
 
 	public override Vector3 Vertex(int x, int z)
 	{
-		int vCount = VertexCount1D - 1;
+		int vCount = vertexCount1D - 1;
 		float angle = Mathf.PI * 2 * x / vCount;
 
-		Vector3 pOnPath = worm.GetPosition(index + z);
-		Vector3 tan = worm.GetForward(index + z);
+		Vector3 pOnPath = worm.GetPosition(index * vertexCount1D + z);
+		Vector3 tan = worm.GetForward(index * vertexCount1D + z);
 		Quaternion q = Quaternion.FromToRotation(Vector3.forward, tan);
 		float radius = worm.config.wormRadius;
 		Vector3 pOnCircle = q * new Vector3(Mathf.Cos(angle) * radius, Mathf.Sin(angle) * radius, 0);
@@ -26,20 +27,15 @@ public class WormVertexModifier : VertexModifierBase
 
 	public override Vector3 Normal(int x, int z)
 	{
-		int vCount = VertexCount1D - 1;
+		int vCount = vertexCount1D - 1;
 		float angle = Mathf.PI * 2 * x / vCount;
 
 		//Vector3 pOnPath = worm.GetPosition(index + z);
-		Vector3 tan = worm.GetForward(index + z);
+		Vector3 tan = worm.GetForward(index * vertexCount1D + z);
 		Quaternion q = Quaternion.FromToRotation(Vector3.forward, tan);
 		float radius = worm.config.wormRadius;
 		Vector3 pOnCircle = q * new Vector3(Mathf.Cos(angle) * radius, Mathf.Sin(angle) * radius, 0);
-		//return -pOnCircle;
-		return Round(-pOnCircle);
-		//Vector3 norm = (pOnCircle - pOnPath).normalized;
-		//return norm;
-		//return new Vector3(Mathf.Round(norm.x * normalRounding) / normalRounding, Mathf.Round(norm.y * normalRounding) / normalRounding, Mathf.Round(norm.z * normalRounding) / normalRounding);
-		//return normal;
+		return -pOnCircle;
 	}
 
 	Vector3 Round(Vector3 v)
@@ -56,6 +52,8 @@ public class WormMeshGeneratorBehaviour : MonoBehaviour
 
 	public int normalRounding = 100;
 
+	[Range(0, 15)] public int zPlaneCount = 2;
+
 	private ProcPlaneBehaviour[] procPlanes;
 	
 	private bool initialized = false;
@@ -70,24 +68,34 @@ public class WormMeshGeneratorBehaviour : MonoBehaviour
 			return;
 		}
 
+		
 		perlinWorm = FindObjectOfType<WormDataBehaviour>().perlinWorm;
-		procPlanes = new ProcPlaneBehaviour[1];
-
+		perlinWorm.config.length = VertexModifier.ComputeVertexCount1D(lod) * zPlaneCount;
 		perlinWorm.Update();
-		VertexModifierBase vm = new WormVertexModifier
+
+		Debug.Log($"perlin count:{perlinWorm.Count} vm:{VertexModifier.ComputeVertexCount1D(lod) * zPlaneCount}");
+
+		procPlanes = new ProcPlaneBehaviour[zPlaneCount];
+		for (int planeIndex = 0; planeIndex < zPlaneCount; ++planeIndex)
 		{
-			Lod = lod,
-			worm = perlinWorm,
-			normalRounding = normalRounding
-		};
-		ProcPlaneCreateParameters createInfo = new ProcPlaneCreateParameters(
-			name: "Worm",
-			materialName: meshMaterialName,
-			vertexModifier: vm
-		);
-		createInfo.recalculateNormals = false;
-		ProcPlaneBehaviour procPlane = ProcPlaneBehaviour.Create(createInfo);
-		procPlanes[0] = procPlane;
+
+			VertexModifierBase vm = new WormVertexModifier
+			{
+				Lod = lod,
+				worm = perlinWorm,
+				normalRounding = normalRounding,
+				index = planeIndex,
+				vertexCount1D = VertexModifier.ComputeVertexCount1D(lod)
+			};
+			ProcPlaneCreateParameters createInfo = new ProcPlaneCreateParameters(
+				name: $"Worm{planeIndex}",
+				materialName: meshMaterialName,
+				vertexModifier: vm
+			);
+			createInfo.recalculateNormals = false;
+			ProcPlaneBehaviour procPlane = ProcPlaneBehaviour.Create(createInfo);
+			procPlanes[planeIndex] = procPlane;
+		}
 
 		initialized = true;
 	}
