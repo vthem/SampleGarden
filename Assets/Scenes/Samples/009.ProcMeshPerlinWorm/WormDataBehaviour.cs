@@ -1,38 +1,41 @@
 using UnityEngine;
 
-public class WormDataBehaviour : MonoBehaviour
+namespace _009_ProcMeshPerlinWorm
 {
-	public PerlinWorm perlinWorm;
-	public bool enableDrawGizmos = false;
-
-	public static PerlinWorm GetPerlinWorm()
+	public class WormDataBehaviour : MonoBehaviour
 	{
-		var w = FindObjectOfType<WormDataBehaviour>().perlinWorm;
-		if (w == null)
+		public PerlinWorm perlinWorm;
+		public bool enableDrawGizmos = false;
+
+		public static PerlinWorm GetPerlinWorm()
 		{
-			Debug.Log("No GameObject with WormDataBehaviour found on scene");
-		}
-		return w;
-	}
-
-	private void Awake()
-	{
-		perlinWorm.Update();
-	}
-
-	private void Update()
-	{
-		perlinWorm.Update();
-	}
-
-	private void OnDrawGizmosSelected()
-	{
-		if (!enableDrawGizmos)
-		{
-			return;
+			PerlinWorm w = FindObjectOfType<WormDataBehaviour>().perlinWorm;
+			if (w == null)
+			{
+				Debug.Log("No GameObject with WormDataBehaviour found on scene");
+			}
+			return w;
 		}
 
-		perlinWorm.Update();
-		perlinWorm.DrawGizmos();
+		private void Awake()
+		{
+			perlinWorm.Update();
+		}
+
+		private void Update()
+		{
+			perlinWorm.Update();
+		}
+
+		private void OnDrawGizmosSelected()
+		{
+			if (!enableDrawGizmos)
+			{
+				return;
+			}
+
+			perlinWorm.Update();
+			perlinWorm.DrawGizmos();
+		}
 	}
 }

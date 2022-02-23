@@ -1,31 +1,35 @@
-using System.Collections;
-using System.Collections.Generic;
+
+using _009_ProcMeshPerlinWorm;
 
 using UnityEngine;
 
-public class WormMeshMaterialBehaviour : MonoBehaviour
+namespace _010_WormMesh
 {
-	private PerlinWorm perlinWorm = null;
-
-	private void Start()
+	public class WormMeshMaterialBehaviour : MonoBehaviour
 	{
-		perlinWorm = WormDataBehaviour.GetPerlinWorm();
-	}
+		private PerlinWorm perlinWorm = null;
 
-	// Update is called once per frame
-	void Update()
-	{
-		Vector4[] vPos = new Vector4[perlinWorm.Count];
-		Vector4[] vForward = new Vector4[perlinWorm.Count];
-		for (int i = 0; i < vPos.Length; ++i)
+		private void Start()
 		{
-			vPos[i] = perlinWorm.GetPosition(i);
-			vForward[i] = perlinWorm.GetForward(i);
+			perlinWorm = WormDataBehaviour.GetPerlinWorm();
 		}
 
-		var mat = GetComponent<MeshRenderer>().sharedMaterial;
-		mat.SetVectorArray("_PositionArray", vPos);
-		mat.SetVectorArray("_ForwardArray", vForward);
-		mat.SetInt("_ArrayCount", perlinWorm.Count);
+		// Update is called once per frame
+		private void Update()
+		{
+			Vector4[] vPos = new Vector4[perlinWorm.Count];
+			Vector4[] vForward = new Vector4[perlinWorm.Count];
+			for (int i = 0; i < vPos.Length; ++i)
+			{
+				vPos[i] = perlinWorm.GetPosition(i);
+				vForward[i] = perlinWorm.GetForward(i);
+			}
+
+			Material mat = GetComponent<MeshRenderer>().sharedMaterial;
+			mat.SetVectorArray("_PositionArray", vPos);
+			mat.SetVectorArray("_ForwardArray", vForward);
+			mat.SetInt("_ArrayCount", perlinWorm.Count);
+		}
 	}
+
 }
