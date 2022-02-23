@@ -520,7 +520,7 @@ GameObject:
   - component: {fileID: 1841395826}
   - component: {fileID: 1841395825}
   m_Layer: 0
-  m_Name: PlaneQuadTreeManager
+  m_Name: PlaneQuadTree
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -544,13 +544,14 @@ MonoBehaviour:
   - 2.5
   - 1
   region:
-    serializedVersion: 2
     x: 0
     y: 0
     width: 10
     height: 10
   template: {fileID: 176704647}
   posObj: {fileID: 615919642}
+  depthMinSqDistance: []
+  rootIndex: 0
 --- !u!4 &1841395826
 Transform:
   m_ObjectHideFlags: 0

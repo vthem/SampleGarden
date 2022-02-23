@@ -19,7 +19,7 @@ public struct PlaneQuadTree
 	public GameObject plane;
 }
 
-public class PlaneQuadTreeManagerBehaviour : MonoBehaviour
+public class PlaneQuadTreeBehaviour : MonoBehaviour
 {
 	private const int QuadTreeMaxSize = 200;
 	private const float planeSize = 10f;
@@ -59,9 +59,6 @@ public class PlaneQuadTreeManagerBehaviour : MonoBehaviour
 			Debug.Log("Fail to create root QuadTree");
 		}
 	}
-
-	private Vector3 lastPosition;
-	private bool lastPositionSet = false;
 
 	private void Update()
 	{
