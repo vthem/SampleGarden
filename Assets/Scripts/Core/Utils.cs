@@ -41,12 +41,13 @@ public static class Utils
         return v.x + v.y * count.x;
     }
 
-    public static (int, int) GetXYFromIndex(int index, int xCount)
-    {
-        int rx = index % xCount;
-        int ry = (index - rx) / xCount;
-        return (rx, ry);
-    }
+	public static Vector2Int GetXYFromIndex(int index, int xCount)
+	{
+		Vector2Int v = new Vector2Int(); ;
+		v.x = index % xCount;
+		v.y = (index - v.x) / xCount;
+		return v;
+	}
 }
 
 public static class UnityExt
