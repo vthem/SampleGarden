@@ -45,6 +45,8 @@ namespace _011_PlaneQuadTree
 				gobj.name = $"chunk[{v.x},{v.y}]";
 				gobj.transform.SetParent(transform);
 				var chunk = gobj.GetComponent<ChunkBehaviour>();
+				gobj.transform.localPosition = new Vector3(chunk.region.size.x * v.x, 0, chunk.region.size.y * v.y);
+				gobj.SetActive(true);
 				chunkArray[i] = chunk;
 			}
 

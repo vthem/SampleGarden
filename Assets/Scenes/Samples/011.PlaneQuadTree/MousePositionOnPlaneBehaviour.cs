@@ -4,14 +4,6 @@ namespace _011_PlaneQuadTree
 {
 	public class MousePositionOnPlaneBehaviour : MonoBehaviour
 	{
-		public GameObject posObj;
-
-		// Start is called before the first frame update
-		void Start()
-		{
-
-		}
-
 		// Update is called once per frame
 		void Update()
 		{
@@ -25,7 +17,7 @@ namespace _011_PlaneQuadTree
 				Vector3 hitPoint = ray.GetPoint(d);
 
 				//Move your cube GameObject to the point where you clicked
-				posObj.transform.position = hitPoint;
+				transform.position = hitPoint;
 			}
 		}
 	}

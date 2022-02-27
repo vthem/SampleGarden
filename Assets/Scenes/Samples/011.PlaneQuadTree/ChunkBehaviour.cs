@@ -29,9 +29,13 @@ namespace _011_PlaneQuadTree
 		private Stack<int> freeQuads = new Stack<int>(QuadTreeMaxSize);
 		private float[] depthMinSqDistance;
 		private int rootIndex;
+		private bool started = false;
 
-		public void RebuildAt(Vector2 position)
+		public void RebuildAt(Vector2 worldPosition)
 		{
+			if (!started)
+				return;
+
 			depthMinSqDistance = new float[depthMinDistance.Length];
 			for (int i = 0; i < depthMinDistance.Length; ++i)
 			{
@@ -40,7 +44,10 @@ namespace _011_PlaneQuadTree
 			}
 
 			DestroyTree(rootIndex);
-			UpdateQuad(rootIndex, position);
+			Vector3 worldPosition3 = new Vector3(worldPosition.x, 0, worldPosition.y);
+			var localPosition3 = transform.InverseTransformPoint(worldPosition3);
+			var localPosition2 = new Vector2(localPosition3.x, localPosition3.z);
+			UpdateQuad(rootIndex, localPosition2);
 		}
 
 		// Start is called before the first frame update
@@ -67,6 +74,8 @@ namespace _011_PlaneQuadTree
 			{
 				Debug.Log("Fail to create root QuadTree");
 			}
+
+			started = true;
 		}
 
 		private void DestroyTree(int qtIndex)
@@ -127,7 +136,7 @@ namespace _011_PlaneQuadTree
 			qt.depth = depth;
 			qt.plane.SetActive(true);
 			qt.visible = true;
-			qt.plane.transform.position = new Vector3(rect.center.x, 0, rect.center.y);
+			qt.plane.transform.localPosition = new Vector3(rect.center.x, 0, rect.center.y);
 			qt.plane.transform.localScale = new Vector3(rect.size.x / planeSize, 0, rect.size.y / planeSize);
 			qt.child0 = qt.child1 = qt.child2 = qt.child3 = -1;
 
