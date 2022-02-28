@@ -30,10 +30,17 @@ namespace _011_PlaneQuadTree
 		private float[] depthMinSqDistance;
 		private int rootIndex;
 		private bool started = false;
+		private bool paused = false;
 
 		public void RebuildAt(Vector2 worldPosition)
 		{
 			if (!started)
+				return;
+
+			if (Input.GetKeyDown(KeyCode.K))
+				paused = !paused;
+
+			if (paused)
 				return;
 
 			depthMinSqDistance = new float[depthMinDistance.Length];
@@ -137,7 +144,7 @@ namespace _011_PlaneQuadTree
 			qt.plane.SetActive(true);
 			qt.visible = true;
 			qt.plane.transform.localPosition = new Vector3(rect.center.x, 0, rect.center.y);
-			qt.plane.transform.localScale = new Vector3(rect.size.x / planeSize, 0, rect.size.y / planeSize);
+			qt.plane.transform.localScale = new Vector3(rect.size.x / planeSize, 1, rect.size.y / planeSize);
 			qt.child0 = qt.child1 = qt.child2 = qt.child3 = -1;
 
 			tree[index] = qt;
