@@ -4,16 +4,12 @@ using UnityEngine;
 
 namespace _011_PlaneQuadTree
 {
-	public struct PlaneQuadTree
+	public class PlaneQuadTree
 	{
 		public Rect rect;
-		public int index;
 		public int depth;
 		public bool visible;
-		public int child0;
-		public int child1;
-		public int child2;
-		public int child3;
+		public PlaneQuadTree[] childs;
 		public GameObject plane;
 	}
 
@@ -25,10 +21,10 @@ namespace _011_PlaneQuadTree
 		public Rect region;
 		public GameObject template;
 
-		private PlaneQuadTree[] tree = new PlaneQuadTree[QuadTreeMaxSize];
-		private Stack<int> freeQuads = new Stack<int>(QuadTreeMaxSize);
+		//private PlaneQuadTree[] tree = new PlaneQuadTree[QuadTreeMaxSize];
+		private Stack<PlaneQuadTree> freeQuads = new Stack<PlaneQuadTree>();
 		private float[] depthMinSqDistance;
-		private int rootIndex;
+		private PlaneQuadTree root;
 		private bool started = false;
 		private bool paused = false;
 
@@ -50,142 +46,123 @@ namespace _011_PlaneQuadTree
 				depthMinSqDistance[i] = v * v;
 			}
 
-			DestroyTree(rootIndex);
+			DestroyTree(root);
+			
 			Vector3 worldPosition3 = new Vector3(worldPosition.x, 0, worldPosition.y);
 			var localPosition3 = transform.InverseTransformPoint(worldPosition3);
 			var localPosition2 = new Vector2(localPosition3.x, localPosition3.z);
-			UpdateQuad(rootIndex, localPosition2);
+			UpdateQuad(root, localPosition2);
 		}
 
-		// Start is called before the first frame update
 		void Start()
 		{
-			for (int i = 0; i < QuadTreeMaxSize; ++i)
-			{
-				var gobj = GameObject.Instantiate(template);
-				gobj.transform.SetParent(transform);
-				gobj.SetActive(false);
-				gobj.name = $"plane#{i}";
-				PlaneQuadTree qt = new PlaneQuadTree();
-				qt.plane = gobj;
-				tree[i] = qt;
-				freeQuads.Push(i);
-			}
-
-			if (CreateQuad(region, 0, out rootIndex))
-			{
-				//CreateQuad(rootIndex);
-				//CreateQuad(tree[rootIndex].child0);
-			}
-			else
-			{
-				Debug.Log("Fail to create root QuadTree");
-			}
-
+			root = CreateQuad(region, 0);
 			started = true;
 		}
 
-		private void DestroyTree(int qtIndex)
+		int instantiatedCount = 0;
+
+		private PlaneQuadTree NewPlaneQuadTree()
 		{
-			if (qtIndex < 0)
+			var gobj = GameObject.Instantiate(template);
+			gobj.transform.SetParent(transform);
+			gobj.SetActive(false);
+			gobj.name = $"plane#{instantiatedCount}";
+			PlaneQuadTree qt = new PlaneQuadTree();
+			qt.plane = gobj;
+			qt.childs = new PlaneQuadTree[4];
+
+			instantiatedCount++;
+			return qt;
+		}
+
+		private void DestroyTree(PlaneQuadTree qt)
+		{
+			if (null == qt)
 				return;
 
-			var qt = tree[qtIndex];
-			DestroyTree(qt.child0);
-			DestroyTree(qt.child1);
-			DestroyTree(qt.child2);
-			DestroyTree(qt.child3);
+			for (int i = 0; i < qt.childs.Length; ++i)
+			{
+				DestroyTree(qt.childs[i]);
+				qt.childs[i] = null;
+			}
 
-			qt.child0 = qt.child1 = qt.child2 = qt.child3 = -1;
 			qt.visible = false;
 			qt.plane.SetActive(false);
 			if (qt.depth == 0) // don't destroy root tree
 			{
-				tree[qtIndex] = qt;
 				return;
 			}
 			qt.depth = -1;
-			qt.index = -1;
-			tree[qtIndex] = qt;
-			freeQuads.Push(qtIndex);
+			freeQuads.Push(qt);
 		}
 
-		private void UpdateQuad(int qtIndex, Vector2 position)
+		private void UpdateQuad(PlaneQuadTree qt, Vector2 position)
 		{
-			if (qtIndex < 0)
+			if (null == qt)
 				return;
-			var qt = tree[qtIndex];
+
 			if (qt.depth >= depthMinDistance.Length)
 				return;
+
 			var qtSqDist = (qt.rect.center - position).sqrMagnitude;
 			var minSqDist = depthMinSqDistance[qt.depth];
-			if (qtSqDist < minSqDist && qt.child0 == -1)
+			if (qtSqDist < minSqDist && qt.childs[0] == null)
 			{
-				CreateQuad(qtIndex);
-				qt = tree[qtIndex];
+				CreateQuad(qt);
 			}
-			UpdateQuad(qt.child0, position); UpdateQuad(qt.child1, position); UpdateQuad(qt.child2, position); UpdateQuad(qt.child3, position);
+			for (int i = 0; i < qt.childs.Length; ++i)
+			{
+				UpdateQuad(qt.childs[i], position);
+			}
 		}
 
-		private bool CreateQuad(Rect rect, int depth, out int index)
+		private PlaneQuadTree CreateQuad(Rect rect, int depth)
 		{
+			PlaneQuadTree qt = null;
 			if (freeQuads.Count == 0)
 			{
-				index = -1;
-				Debug.LogError("no free QuadTree");
-				return false;
+				qt = NewPlaneQuadTree();
+			}
+			else
+			{
+				qt = freeQuads.Pop();
 			}
 
-			index = freeQuads.Pop();
-			var qt = tree[index];
-			qt.index = index;
 			qt.rect = rect;
 			qt.depth = depth;
 			qt.plane.SetActive(true);
 			qt.visible = true;
 			qt.plane.transform.localPosition = new Vector3(rect.center.x, 0, rect.center.y);
 			qt.plane.transform.localScale = new Vector3(rect.size.x / planeSize, 1, rect.size.y / planeSize);
-			qt.child0 = qt.child1 = qt.child2 = qt.child3 = -1;
-
-			tree[index] = qt;
-
-			return true;
+			for (int i = 0; i < qt.childs.Length; ++i)
+			{
+				qt.childs[i] = null;
+			}
+			return qt;
 		}
 
-		private bool CreateQuad(int parentIndex)
+		private void CreateQuad(PlaneQuadTree parent)
 		{
-			if (freeQuads.Count < 4)
-			{
-				Debug.LogError("no free QuadTree");
-				return false;
-			}
-
-			var parent = tree[parentIndex];
+			if (null == parent)
+				return;
 
 			Vector2 childSize = parent.rect.size / 2f;
 
 			Rect rect = new Rect(new Vector2(parent.rect.center.x - parent.rect.size.x * 0.5f, parent.rect.center.y - parent.rect.size.y * 0.5f), childSize);
-			CreateQuad(rect, parent.depth + 1, out int child);
-			parent.child0 = child;
+			parent.childs[0] = CreateQuad(rect, parent.depth + 1);
 
 			rect = new Rect(new Vector2(parent.rect.center.x - parent.rect.size.x * 0.5f, parent.rect.center.y), childSize);
-			CreateQuad(rect, parent.depth + 1, out child);
-			parent.child1 = child;
+			parent.childs[1] = CreateQuad(rect, parent.depth + 1);
 
-			rect = new Rect(new Vector2(parent.rect.center.x, parent.rect.center.y), childSize);
-			CreateQuad(rect, parent.depth + 1, out child);
-			parent.child2 = child;
+			rect = new Rect(new Vector2(parent.rect.center.x, parent.rect.center.y), childSize);			
+			parent.childs[2] = CreateQuad(rect, parent.depth + 1);
 
 			rect = new Rect(new Vector2(parent.rect.center.x, parent.rect.center.y - parent.rect.size.y * 0.5f), childSize);
-			CreateQuad(rect, parent.depth + 1, out child);
-			parent.child3 = child;
-
+			parent.childs[3] = CreateQuad(rect, parent.depth + 1);
+			
 			parent.plane.SetActive(false);
 			parent.visible = false;
-
-			tree[parentIndex] = parent;
-
-			return true;
 		}
 	}
 
