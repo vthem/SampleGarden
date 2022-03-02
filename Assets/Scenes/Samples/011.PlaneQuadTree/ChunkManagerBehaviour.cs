@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 using UnityEngine;
 
 namespace _011_PlaneQuadTree
@@ -7,21 +9,35 @@ namespace _011_PlaneQuadTree
 		public Vector2Int size = new Vector2Int(1, 1);
 		public GameObject template;
 		public GameObject positionObj;
+		public Mesh mesh;
+		public Material material;
 		
 
 		private ChunkBehaviour[] chunkArray;
 		private Vector2Int lastRebuildSize = new Vector2Int(-1, -1);
+		private List<Matrix4x4> planes = new List<Matrix4x4>();
 
 		// Update is called once per frame
 		void Update()
 		{
 			RebuildChunkArray();
 
+			planes.Clear();
+
 			Vector2 position = new Vector2(positionObj.transform.position.x, positionObj.transform.position.z);
 			for (int i = 0; i < chunkArray.Length; ++i)
 			{
-				chunkArray[i].RebuildAt(position);
+				chunkArray[i].RebuildAt(position, planes);
 			}
+
+			Graphics.DrawMeshInstanced(
+				mesh: mesh,
+				submeshIndex: 0,
+				material: material,
+				matrices: planes,
+				properties: null,
+				castShadows: UnityEngine.Rendering.ShadowCastingMode.Off,
+				receiveShadows: true);
 		}
 
 		void RebuildChunkArray()
