@@ -2,9 +2,12 @@
 #ifndef HEIGHTMODIFIER_HLSL
 #define HEIGHTMODIFIER_HLSL
 
-void HeightModifier_float(float3 vOS, float height, out float3 vOutOS)
+#include "Packages/jp.keijiro.noiseshader/Shader/ClassicNoise3D.hlsl"
+
+void HeightModifier_float(float3 vOS, float3 vWS, float heightScale, out float3 vOutOS)
 {
-	vOS.y = height;
+	float height = ClassicNoise(vWS);
+	vOS.y = height * heightScale;
 	vOutOS = vOS;
 }
 
