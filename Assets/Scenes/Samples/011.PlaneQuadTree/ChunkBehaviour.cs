@@ -19,6 +19,10 @@ namespace _011_PlaneQuadTree
 		public float[] depthMinDistance = new float[] { 20f, 5f, 2.5f, 1f };
 		public Rect region;
 
+		public GameObject positionObj;
+		public Mesh mesh;
+		public Material material;
+
 		//private PlaneQuadTree[] tree = new PlaneQuadTree[QuadTreeMaxSize];
 		private Stack<PlaneQuadTree> freeQuads = new Stack<PlaneQuadTree>();
 		private float[] depthMinSqDistance;
@@ -27,9 +31,26 @@ namespace _011_PlaneQuadTree
 		private bool paused = false;
 		private List<PlaneQuadTree> quads = new List<PlaneQuadTree>();
 		private Vector2 targetPosition;
+		private List<Matrix4x4> planes = new List<Matrix4x4>();
 
-		public void RebuildAt(Vector2 worldPosition, List<Matrix4x4> planes)
+		private void Update()
 		{
+			RebuildPlaneList();
+
+			Graphics.DrawMeshInstanced(
+				mesh: mesh,
+				submeshIndex: 0,
+				material: material,
+				matrices: planes,
+				properties: null,
+				castShadows: UnityEngine.Rendering.ShadowCastingMode.Off,
+				receiveShadows: true);
+		}
+
+		private void RebuildPlaneList()
+		{
+			planes.Clear();
+
 			if (!started)
 				return;
 
@@ -47,11 +68,9 @@ namespace _011_PlaneQuadTree
 			}
 
 			DestroyTree(root);
-			
-			Vector3 worldPosition3 = new Vector3(worldPosition.x, 0, worldPosition.y);
-			var localPosition3 = transform.InverseTransformPoint(worldPosition3);
-			targetPosition = new Vector2(localPosition3.x, localPosition3.z);
-			
+
+			ComputeTargetPosition();
+
 			quads.Clear();
 			UpdateQuad(root);
 
@@ -98,6 +117,13 @@ namespace _011_PlaneQuadTree
 			}
 			qt.depth = -1;
 			freeQuads.Push(qt);
+		}
+
+		private void ComputeTargetPosition()
+		{
+			Vector3 worldPosition3 = positionObj.transform.position;
+			var localPosition3 = transform.InverseTransformPoint(worldPosition3);
+			targetPosition = new Vector2(localPosition3.x, localPosition3.z);
 		}
 
 		private void UpdateQuad(PlaneQuadTree qt)
