@@ -8,8 +8,9 @@ namespace _011_PlaneQuadTree
 	{
 		public Rect rect;
 		public int depth;
-		public bool visible;
 		public PlaneQuadTree[] childs;
+
+		public bool HasChilds { get { return childs[0] != null; } }
 	}
 
 	public class ChunkBehaviour : MonoBehaviour
@@ -27,7 +28,6 @@ namespace _011_PlaneQuadTree
 		private Stack<PlaneQuadTree> freeQuads = new Stack<PlaneQuadTree>();
 		private float[] depthMinSqDistance;
 		private PlaneQuadTree root;
-		private bool started = false;
 		private bool paused = false;
 		private List<PlaneQuadTree> quads = new List<PlaneQuadTree>();
 		private Vector2 targetPosition;
@@ -35,6 +35,8 @@ namespace _011_PlaneQuadTree
 
 		private void Update()
 		{
+			RebuildRoot();
+
 			RebuildPlaneList();
 
 			Graphics.DrawMeshInstanced(
@@ -50,9 +52,6 @@ namespace _011_PlaneQuadTree
 		private void RebuildPlaneList()
 		{
 			planes.Clear();
-
-			if (!started)
-				return;
 
 			if (Input.GetKeyDown(KeyCode.K))
 				paused = !paused;
@@ -77,7 +76,10 @@ namespace _011_PlaneQuadTree
 			for (int i = 0; i < quads.Count; ++i)
 			{
 				var qt = quads[i];
-				if (!qt.visible)
+				if (qt.HasChilds)
+					continue;
+				bool isInsideRegion = region.xMin <= qt.rect.xMin && region.xMax >= qt.rect.xMax && region.yMin <= qt.rect.yMin && region.yMax >= qt.rect.yMax; //region.Contains(qt.rect.min) && region.Contains(qt.rect.max);
+				if (!isInsideRegion)
 					continue;
 				var pos = new Vector3(qt.rect.center.x, 0, qt.rect.center.y) + transform.localPosition;
 				var scale = new Vector3(qt.rect.size.x / planeSize, 1, qt.rect.size.y / planeSize);
@@ -86,10 +88,22 @@ namespace _011_PlaneQuadTree
 			}
 		}
 
-		void Start()
+		void RebuildRoot()
 		{
-			root = CreateQuad(region, 0);
-			started = true;
+			var sqSize = Mathf.Max(region.size.x, region.size.y);
+			var rootRect = new Rect(region.xMin, region.yMin, sqSize, sqSize);
+			if (root == null)
+			{
+				root = CreateQuad(rootRect, 0);
+			}
+			else
+			{
+				if (root.rect != rootRect)
+				{
+					DestroyTree(root);
+					root = CreateQuad(rootRect, 0);
+				}
+			}
 		}
 
 		private PlaneQuadTree NewPlaneQuadTree()
@@ -110,7 +124,6 @@ namespace _011_PlaneQuadTree
 				qt.childs[i] = null;
 			}
 
-			qt.visible = false;
 			if (qt.depth == 0) // don't destroy root tree
 			{
 				return;
@@ -134,11 +147,21 @@ namespace _011_PlaneQuadTree
 			if (qt.depth >= depthMinDistance.Length)
 				return;
 
-			var qtSqDist = (qt.rect.center - targetPosition).sqrMagnitude;
-			var minSqDist = depthMinSqDistance[qt.depth];
-			if (qtSqDist < minSqDist && qt.childs[0] == null)
+
+			bool createChilds = qt.rect.Contains(targetPosition);
+			if (!createChilds)
 			{
-				CreateQuad(qt);
+				var qtSqSqSize = qt.rect.size.x * qt.rect.size.x;
+				var qtSqDist = (qt.rect.center - targetPosition).sqrMagnitude - qtSqSqSize;
+				qtSqDist = Mathf.Max(0, qtSqDist);
+				var minSqDist = depthMinSqDistance[qt.depth];
+
+				createChilds = qtSqDist < minSqDist;
+
+			}
+			if (createChilds)
+			{
+				CreateQuadChilds(qt);
 			}
 			for (int i = 0; i < qt.childs.Length; ++i)
 			{
@@ -148,7 +171,7 @@ namespace _011_PlaneQuadTree
 
 		private PlaneQuadTree CreateQuad(Rect rect, int depth)
 		{
-			PlaneQuadTree qt = null;
+			PlaneQuadTree qt;
 			if (freeQuads.Count == 0)
 			{
 				qt = NewPlaneQuadTree();
@@ -160,7 +183,6 @@ namespace _011_PlaneQuadTree
 
 			qt.rect = rect;
 			qt.depth = depth;
-			qt.visible = true;
 
 			for (int i = 0; i < qt.childs.Length; ++i)
 			{
@@ -172,7 +194,7 @@ namespace _011_PlaneQuadTree
 			return qt;
 		}
 
-		private void CreateQuad(PlaneQuadTree parent)
+		private void CreateQuadChilds(PlaneQuadTree parent)
 		{
 			if (null == parent)
 				return;
@@ -185,13 +207,24 @@ namespace _011_PlaneQuadTree
 			rect = new Rect(new Vector2(parent.rect.center.x - parent.rect.size.x * 0.5f, parent.rect.center.y), childSize);
 			parent.childs[1] = CreateQuad(rect, parent.depth + 1);
 
-			rect = new Rect(new Vector2(parent.rect.center.x, parent.rect.center.y), childSize);			
+			rect = new Rect(new Vector2(parent.rect.center.x, parent.rect.center.y), childSize);
 			parent.childs[2] = CreateQuad(rect, parent.depth + 1);
 
 			rect = new Rect(new Vector2(parent.rect.center.x, parent.rect.center.y - parent.rect.size.y * 0.5f), childSize);
 			parent.childs[3] = CreateQuad(rect, parent.depth + 1);
-			
-			parent.visible = false;
+		}
+
+		private void OnDrawGizmosSelected()
+		{
+			var v1 = transform.TransformPoint(new Vector3(region.xMin, 0, region.yMin));
+			var v2 = transform.TransformPoint(new Vector3(region.xMin, 0, region.yMax));
+			var v3 = transform.TransformPoint(new Vector3(region.xMax, 0, region.yMax));
+			var v4 = transform.TransformPoint(new Vector3(region.xMax, 0, region.yMin));
+			Gizmos.color = Color.magenta;
+			Gizmos.DrawLine(v1, v2);
+			Gizmos.DrawLine(v2, v3);
+			Gizmos.DrawLine(v3, v4);
+			Gizmos.DrawLine(v4, v1);
 		}
 	}
 
