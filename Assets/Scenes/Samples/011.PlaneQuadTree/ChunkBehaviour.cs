@@ -2,6 +2,10 @@ using System.Collections.Generic;
 
 using UnityEngine;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 namespace _011_PlaneQuadTree
 {
 	public class PlaneQuadTree
@@ -23,6 +27,7 @@ namespace _011_PlaneQuadTree
 		public GameObject positionObj;
 		public Mesh mesh;
 		public Material material;
+		public bool drawOutsideRegion = false;
 
 		//private PlaneQuadTree[] tree = new PlaneQuadTree[QuadTreeMaxSize];
 		private Stack<PlaneQuadTree> freeQuads = new Stack<PlaneQuadTree>();
@@ -78,14 +83,31 @@ namespace _011_PlaneQuadTree
 				var qt = quads[i];
 				if (qt.HasChilds)
 					continue;
-				bool isInsideRegion = region.xMin <= qt.rect.xMin && region.xMax >= qt.rect.xMax && region.yMin <= qt.rect.yMin && region.yMax >= qt.rect.yMax; //region.Contains(qt.rect.min) && region.Contains(qt.rect.max);
-				if (!isInsideRegion)
+				bool isInsideRegion = region.xMin <= qt.rect.xMin && region.xMax >= qt.rect.xMax && region.yMin <= qt.rect.yMin && region.yMax >= qt.rect.yMax;
+				if (!drawOutsideRegion && !isInsideRegion)
 					continue;
-				var pos = new Vector3(qt.rect.center.x, 0, qt.rect.center.y) + transform.localPosition;
 				var scale = new Vector3(qt.rect.size.x / planeSize, 1, qt.rect.size.y / planeSize);
-				Matrix4x4 planeMatrix = Matrix4x4.TRS(pos, Quaternion.identity, scale);
+				Matrix4x4 planeMatrix = Matrix4x4.TRS(GetQuatPositionWS(qt), Quaternion.identity, scale);
 				planes.Add(planeMatrix);
 			}
+		}
+
+		private Vector3 GetQuatPositionWS(PlaneQuadTree qt)
+		{
+			return GetPositionWS(qt.rect.center);
+		}
+
+		private Vector3 GetPositionWS(Vector2 v)
+		{
+			return new Vector3(v.x, 0f, v.y) + transform.localPosition;
+		}
+
+		private float GetViewportArea(PlaneQuadTree qt)
+		{
+			var min = Camera.main.WorldToViewportPoint(GetPositionWS(qt.rect.min));
+			var max = Camera.main.WorldToViewportPoint(GetPositionWS(qt.rect.max));
+			var delta = max - min;
+			return delta.x * delta.y;
 		}
 
 		void RebuildRoot()
@@ -214,13 +236,27 @@ namespace _011_PlaneQuadTree
 			parent.childs[3] = CreateQuad(rect, parent.depth + 1);
 		}
 
-		private void OnDrawGizmosSelected()
+		private void OnDrawGizmos()
 		{
-			var v1 = transform.TransformPoint(new Vector3(region.xMin, 0, region.yMin));
-			var v2 = transform.TransformPoint(new Vector3(region.xMin, 0, region.yMax));
-			var v3 = transform.TransformPoint(new Vector3(region.xMax, 0, region.yMax));
-			var v4 = transform.TransformPoint(new Vector3(region.xMax, 0, region.yMin));
-			Gizmos.color = Color.magenta;
+			for (int i = 0; i < quads.Count; ++i)
+			{
+				var qt = quads[i];
+				GizmosDrawRect(qt.rect, Color.green);
+#if UNITY_EDITOR
+				if (!qt.HasChilds)
+					Handles.Label(GetQuatPositionWS(qt), $"{i}:{GetViewportArea(qt):F2}");
+#endif
+			}
+			GizmosDrawRect(region, Color.magenta);
+		}
+
+		private void GizmosDrawRect(Rect rect, Color color)
+		{
+			var v1 = transform.TransformPoint(new Vector3(rect.xMin, 0, rect.yMin));
+			var v2 = transform.TransformPoint(new Vector3(rect.xMin, 0, rect.yMax));
+			var v3 = transform.TransformPoint(new Vector3(rect.xMax, 0, rect.yMax));
+			var v4 = transform.TransformPoint(new Vector3(rect.xMax, 0, rect.yMin));
+			Gizmos.color = color;
 			Gizmos.DrawLine(v1, v2);
 			Gizmos.DrawLine(v2, v3);
 			Gizmos.DrawLine(v3, v4);
