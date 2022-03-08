@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 
 using UnityEngine;
+using System.Reflection;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -15,38 +16,45 @@ namespace _011_PlaneQuadTree
 		public Rect rect;
 		public int depth;
 		public PlaneQuadTree[] childs = new PlaneQuadTree[_count];
-		public int[] neighborDepth = new int[_count];
+		public int[] neighborDepthDelta = new int[_count];
+		public int index;
 
 		public bool HasChilds { get { return childs[0] != null; } }
 
+		public PlaneQuadTree()
+		{
+			Reset();
+		}
+
 		public void Reset()
 		{
+			index = -1;
+			depth = -1;
+			rect = new Rect();
 			for (int i = 0; i < _count; ++i)
 			{
 				childs[i] = null;
-				neighborDepth[i] = -1;
+				neighborDepthDelta[i] = -1;
 			}
 		}
 
-		public bool TryFindAt(Vector2 pos, out PlaneQuadTree outQt)
+		public bool TryFind(Vector2 pos, out PlaneQuadTree outQt)
 		{
 			outQt = null;
 			if (!rect.Contains(pos))
 				return false;
 
 			outQt = this;
-			while (true)
+			for (int i = 0; i < outQt.childs.Length; ++i)
 			{
-				for (int i = 0; i < outQt.childs.Length; ++i)
+				if (outQt.childs[i] != null && outQt.childs[i].rect.Contains(pos))
 				{
-					if (outQt.childs[i].rect.Contains(pos))
-					{
-						outQt = outQt.childs[i];
-						continue;
-					}
+					outQt = outQt.childs[i];
+					i = -1;
+					continue;
 				}
-				return true;
 			}
+			return true;
 		}
 	}
 
@@ -80,9 +88,7 @@ namespace _011_PlaneQuadTree
 		private List<Matrix4x4> planes = new List<Matrix4x4>();
 
 		private void Update()
-		{
-			RebuildRoot();
-
+		{	
 			RebuildPlaneList();
 
 			Graphics.DrawMeshInstanced(
@@ -112,11 +118,12 @@ namespace _011_PlaneQuadTree
 				depthMinSqDistance[i] = v * v;
 			}
 
-			DestroyTree(root);
-
 			ComputeTargetPosition();
-
+			DestroyTree(root);
+			root = null;
 			quads.Clear();
+			
+			BuildRoot();
 			UpdateQuad(root);
 
 			for (int i = 0; i < quads.Count; ++i)
@@ -130,6 +137,7 @@ namespace _011_PlaneQuadTree
 				var scale = new Vector3(qt.rect.size.x / planeSize, 1, qt.rect.size.y / planeSize);
 				Matrix4x4 planeMatrix = Matrix4x4.TRS(GetQuatPositionWS(qt), Quaternion.identity, scale);
 				planes.Add(planeMatrix);
+				FindNeighborDepth(qt);
 			}
 		}
 
@@ -151,22 +159,15 @@ namespace _011_PlaneQuadTree
 			return delta.x * delta.y;
 		}
 
-		void RebuildRoot()
+		void BuildRoot()
 		{
+			if (root != null)
+				return;
+
 			var sqSize = Mathf.Max(region.size.x, region.size.y);
 			var rootRect = new Rect(region.xMin, region.yMin, sqSize, sqSize);
-			if (root == null)
-			{
-				root = CreateQuad(rootRect, 0);
-			}
-			else
-			{
-				if (root.rect != rootRect)
-				{
-					DestroyTree(root);
-					root = CreateQuad(rootRect, 0);
-				}
-			}
+			root = CreateQuad(rootRect, 0);
+			
 		}
 
 		private PlaneQuadTree NewPlaneQuadTree()
@@ -185,11 +186,7 @@ namespace _011_PlaneQuadTree
 				qt.childs[i] = null;
 			}
 
-			if (qt.depth == 0) // don't destroy root tree
-			{
-				return;
-			}
-			qt.depth = -1;
+			qt.Reset();
 			freeQuads.Push(qt);
 		}
 
@@ -255,6 +252,7 @@ namespace _011_PlaneQuadTree
 				qt.childs[i] = null;
 			}
 
+			qt.index = quads.Count;
 			quads.Add(qt);
 
 			return qt;
@@ -289,14 +287,14 @@ namespace _011_PlaneQuadTree
 #if UNITY_EDITOR
 				if (!qt.HasChilds)
 				{
-					// Handles.Label(GetQuatPositionWS(qt), $"{i}:{GetViewportArea(qt):F2}");
+					Handles.Label(GetQuatPositionWS(qt), $"{qt.index}/*:{GetViewportArea(qt):F2}*/");
 
 					Vector2[] dirs = { Vector2.left, Vector2.up, Vector2.right, Vector2.down };
 
 					for (int k = 0; k < 4; ++k)
 					{
-						var pos = qt.rect.center + dirs[k] * qt.rect.size.x * 0.9f;
-						Handles.Label(GetPositionWS(pos), $"{qt.neighborDepth[k]}");
+						var pos = qt.rect.center + dirs[k] * qt.rect.size.x * 0.45f;
+						Handles.Label(GetPositionWS(pos), $"{qt.neighborDepthDelta[k]}");
 					}
 				}
 #endif
@@ -323,11 +321,11 @@ namespace _011_PlaneQuadTree
 
 			for (int i = 0; i < 4; ++i)
 			{
-				if (qt.TryFindAt(qt.rect.center + dirs[i] * qt.rect.size.x, out var neighbor))
+				if (root.TryFind(qt.rect.center + dirs[i] * qt.rect.size.x, out var neighbor))
 				{
-					if (neighbor.depth > qt.depth)
+					if (neighbor.depth < qt.depth)
 					{
-						qt.neighborDepth[i] = neighbor.depth;
+						qt.neighborDepthDelta[i] = qt.depth - neighbor.depth;
 					}
 				}
 			}
