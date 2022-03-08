@@ -10,11 +10,44 @@ namespace _011_PlaneQuadTree
 {
 	public class PlaneQuadTree
 	{
+		private const int _count = 4;
+
 		public Rect rect;
 		public int depth;
-		public PlaneQuadTree[] childs;
+		public PlaneQuadTree[] childs = new PlaneQuadTree[_count];
+		public int[] neighborDepth = new int[_count];
 
 		public bool HasChilds { get { return childs[0] != null; } }
+
+		public void Reset()
+		{
+			for (int i = 0; i < _count; ++i)
+			{
+				childs[i] = null;
+				neighborDepth[i] = -1;
+			}
+		}
+
+		public bool TryFindAt(Vector2 pos, out PlaneQuadTree outQt)
+		{
+			outQt = null;
+			if (!rect.Contains(pos))
+				return false;
+
+			outQt = this;
+			while (true)
+			{
+				for (int i = 0; i < outQt.childs.Length; ++i)
+				{
+					if (outQt.childs[i].rect.Contains(pos))
+					{
+						outQt = outQt.childs[i];
+						continue;
+					}
+				}
+				return true;
+			}
+		}
 	}
 
 	public class ChunkBehaviour : MonoBehaviour
@@ -138,9 +171,7 @@ namespace _011_PlaneQuadTree
 
 		private PlaneQuadTree NewPlaneQuadTree()
 		{
-			PlaneQuadTree qt = new PlaneQuadTree();
-			qt.childs = new PlaneQuadTree[4];
-			return qt;
+			return new PlaneQuadTree();
 		}
 
 		private void DestroyTree(PlaneQuadTree qt)
@@ -257,7 +288,17 @@ namespace _011_PlaneQuadTree
 				GizmosDrawRect(qt.rect, Color.green);
 #if UNITY_EDITOR
 				if (!qt.HasChilds)
-					Handles.Label(GetQuatPositionWS(qt), $"{i}:{GetViewportArea(qt):F2}");
+				{
+					// Handles.Label(GetQuatPositionWS(qt), $"{i}:{GetViewportArea(qt):F2}");
+
+					Vector2[] dirs = { Vector2.left, Vector2.up, Vector2.right, Vector2.down };
+
+					for (int k = 0; k < 4; ++k)
+					{
+						var pos = qt.rect.center + dirs[k] * qt.rect.size.x * 0.9f;
+						Handles.Label(GetPositionWS(pos), $"{qt.neighborDepth[k]}");
+					}
+				}
 #endif
 			}
 			GizmosDrawRect(region, Color.magenta);
@@ -274,6 +315,22 @@ namespace _011_PlaneQuadTree
 			Gizmos.DrawLine(v2, v3);
 			Gizmos.DrawLine(v3, v4);
 			Gizmos.DrawLine(v4, v1);
+		}
+
+		private void FindNeighborDepth(PlaneQuadTree qt)
+		{
+			Vector2[] dirs = { Vector2.left, Vector2.up, Vector2.right, Vector2.down };
+
+			for (int i = 0; i < 4; ++i)
+			{
+				if (qt.TryFindAt(qt.rect.center + dirs[i] * qt.rect.size.x, out var neighbor))
+				{
+					if (neighbor.depth > qt.depth)
+					{
+						qt.neighborDepth[i] = neighbor.depth;
+					}
+				}
+			}
 		}
 	}
 
