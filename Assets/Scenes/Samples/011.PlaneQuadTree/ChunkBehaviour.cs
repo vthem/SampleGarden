@@ -149,7 +149,7 @@ namespace _011_PlaneQuadTree
 				depthDeltaData[instanceId] = FindNeighborDepth(qt);
 			}
 
-			material.SetColorArray("_depthDelta", depthDeltaData);
+			material.SetColorArray("depthDeltaData", depthDeltaData);
 		}
 
 		private Vector3 GetQuatPositionWS(PlaneQuadTree qt)
