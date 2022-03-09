@@ -2,6 +2,7 @@ using System.Collections.Generic;
 
 using UnityEngine;
 using System.Reflection;
+using System;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -86,6 +87,9 @@ namespace _011_PlaneQuadTree
 		private List<PlaneQuadTree> quads = new List<PlaneQuadTree>();
 		private Vector2 targetPosition;
 		private List<Matrix4x4> planes = new List<Matrix4x4>();
+		private Color[] depthDeltaData = new Color[MaxInstanceDataCount];
+
+		private const int MaxInstanceDataCount = 1023;
 
 		private void Update()
 		{	
@@ -119,13 +123,17 @@ namespace _011_PlaneQuadTree
 			}
 
 			ComputeTargetPosition();
+
+			// clear the existing
 			DestroyTree(root);
 			root = null;
 			quads.Clear();
 			
+			// rebuild the quadtree
 			BuildRoot();
 			UpdateQuad(root);
 
+			// update quads data
 			for (int i = 0; i < quads.Count; ++i)
 			{
 				var qt = quads[i];
@@ -136,9 +144,12 @@ namespace _011_PlaneQuadTree
 					continue;
 				var scale = new Vector3(qt.rect.size.x / planeSize, 1, qt.rect.size.y / planeSize);
 				Matrix4x4 planeMatrix = Matrix4x4.TRS(GetQuatPositionWS(qt), Quaternion.identity, scale);
+				var instanceId = planes.Count;
 				planes.Add(planeMatrix);
-				FindNeighborDepth(qt);
+				depthDeltaData[instanceId] = FindNeighborDepth(qt);
 			}
+
+			material.SetColorArray("_depthDelta", depthDeltaData);
 		}
 
 		private Vector3 GetQuatPositionWS(PlaneQuadTree qt)
@@ -315,20 +326,25 @@ namespace _011_PlaneQuadTree
 			Gizmos.DrawLine(v4, v1);
 		}
 
-		private void FindNeighborDepth(PlaneQuadTree qt)
+		private Color32 FindNeighborDepth(PlaneQuadTree qt)
 		{
 			Vector2[] dirs = { Vector2.left, Vector2.up, Vector2.right, Vector2.down };
 
+			Color32 packedDepth = new Color32();
 			for (int i = 0; i < 4; ++i)
 			{
 				if (root.TryFind(qt.rect.center + dirs[i] * qt.rect.size.x, out var neighbor))
 				{
 					if (neighbor.depth < qt.depth)
 					{
-						qt.neighborDepthDelta[i] = qt.depth - neighbor.depth;
+						var delta = qt.depth - neighbor.depth;
+						qt.neighborDepthDelta[i] = delta;
+						packedDepth[i] = (byte)delta;
 					}
 				}
+				
 			}
+			return packedDepth;
 		}
 	}
 
