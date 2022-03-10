@@ -19,6 +19,7 @@ namespace _011_PlaneQuadTree
 		public PlaneQuadTree[] childs = new PlaneQuadTree[_count];
 		public int[] neighborDepthDelta = new int[_count];
 		public int index;
+		public int instanceId;
 
 		public bool HasChilds { get { return childs[0] != null; } }
 
@@ -86,10 +87,12 @@ namespace _011_PlaneQuadTree
 		private bool paused = false;
 		private List<PlaneQuadTree> quads = new List<PlaneQuadTree>();
 		private Vector2 targetPosition;
-		private List<Matrix4x4> planes = new List<Matrix4x4>();
+		private Matrix4x4[] planes = new Matrix4x4[MaxInstanceDataCount];
+		private Matrix4x4[] planesInv = new Matrix4x4[MaxInstanceDataCount];
 		private Color[] depthDeltaData = new Color[MaxInstanceDataCount];
 
-		private const int MaxInstanceDataCount = 1023;
+		private const int MaxInstanceDataCount = 200;
+		private int instanceCount = 0;
 
 		private void Update()
 		{	
@@ -100,6 +103,7 @@ namespace _011_PlaneQuadTree
 				submeshIndex: 0,
 				material: material,
 				matrices: planes,
+				count: instanceCount,
 				properties: null,
 				castShadows: UnityEngine.Rendering.ShadowCastingMode.Off,
 				receiveShadows: true);
@@ -107,7 +111,7 @@ namespace _011_PlaneQuadTree
 
 		private void RebuildPlaneList()
 		{
-			planes.Clear();
+			instanceCount = 0;
 
 			if (Input.GetKeyDown(KeyCode.K))
 				paused = !paused;
@@ -144,12 +148,16 @@ namespace _011_PlaneQuadTree
 					continue;
 				var scale = new Vector3(qt.rect.size.x / planeSize, 1, qt.rect.size.y / planeSize);
 				Matrix4x4 planeMatrix = Matrix4x4.TRS(GetQuatPositionWS(qt), Quaternion.identity, scale);
-				var instanceId = planes.Count;
-				planes.Add(planeMatrix);
+				var instanceId = instanceCount;
+				planes[instanceId] = planeMatrix;
+				planesInv[instanceId] = planeMatrix.inverse;
 				depthDeltaData[instanceId] = FindNeighborDepth(qt);
+				qt.instanceId = instanceId;
+				instanceCount++;
 			}
 
 			material.SetColorArray("depthDeltaData", depthDeltaData);
+			material.SetMatrixArray("_objectToWorld", planesInv);
 		}
 
 		private Vector3 GetQuatPositionWS(PlaneQuadTree qt)
@@ -298,7 +306,7 @@ namespace _011_PlaneQuadTree
 #if UNITY_EDITOR
 				if (!qt.HasChilds)
 				{
-					Handles.Label(GetQuatPositionWS(qt), $"{qt.index}/*:{GetViewportArea(qt):F2}*/");
+					Handles.Label(GetQuatPositionWS(qt), $"{qt.instanceId}");
 
 					Vector2[] dirs = { Vector2.left, Vector2.up, Vector2.right, Vector2.down };
 
@@ -326,11 +334,11 @@ namespace _011_PlaneQuadTree
 			Gizmos.DrawLine(v4, v1);
 		}
 
-		private Color32 FindNeighborDepth(PlaneQuadTree qt)
+		private Color FindNeighborDepth(PlaneQuadTree qt)
 		{
 			Vector2[] dirs = { Vector2.left, Vector2.up, Vector2.right, Vector2.down };
 
-			Color32 packedDepth = new Color32();
+			Color packedDepth = new Color();
 			for (int i = 0; i < 4; ++i)
 			{
 				if (root.TryFind(qt.rect.center + dirs[i] * qt.rect.size.x, out var neighbor))
@@ -339,7 +347,7 @@ namespace _011_PlaneQuadTree
 					{
 						var delta = qt.depth - neighbor.depth;
 						qt.neighborDepthDelta[i] = delta;
-						packedDepth[i] = (byte)delta;
+						packedDepth[i] = delta;
 					}
 				}
 				
