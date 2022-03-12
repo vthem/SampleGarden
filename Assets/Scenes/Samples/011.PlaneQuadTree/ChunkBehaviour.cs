@@ -88,7 +88,6 @@ namespace _011_PlaneQuadTree
 		private List<PlaneQuadTree> quads = new List<PlaneQuadTree>();
 		private Vector2 targetPosition;
 		private Matrix4x4[] planes = new Matrix4x4[MaxInstanceDataCount];
-		private Matrix4x4[] planesInv = new Matrix4x4[MaxInstanceDataCount];
 		private Color[] depthDeltaData = new Color[MaxInstanceDataCount];
 
 		private const int MaxInstanceDataCount = 200;
@@ -150,14 +149,13 @@ namespace _011_PlaneQuadTree
 				Matrix4x4 planeMatrix = Matrix4x4.TRS(GetQuatPositionWS(qt), Quaternion.identity, scale);
 				var instanceId = instanceCount;
 				planes[instanceId] = planeMatrix;
-				planesInv[instanceId] = planeMatrix.inverse;
 				depthDeltaData[instanceId] = FindNeighborDepth(qt);
 				qt.instanceId = instanceId;
 				instanceCount++;
 			}
 
 			material.SetColorArray("depthDeltaData", depthDeltaData);
-			material.SetMatrixArray("_objectToWorld", planesInv);
+			material.SetMatrixArray("_objectToWorld", planes);
 		}
 
 		private Vector3 GetQuatPositionWS(PlaneQuadTree qt)
