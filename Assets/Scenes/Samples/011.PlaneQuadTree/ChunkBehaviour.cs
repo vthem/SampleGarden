@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Reflection;
 using System;
+using static UnityEditor.ShaderGraph.Internal.KeywordDependentCollection;
+using static UnityEditor.PlayerSettings;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -19,6 +21,7 @@ namespace _011_PlaneQuadTree
 		public PlaneQuadTree[] childs = new PlaneQuadTree[_count];
 		public int[] neighborDepthDelta = new int[_count];
 		public int index;
+		public int instanceId;
 
 		public bool HasChilds { get { return childs[0] != null; } }
 
@@ -86,28 +89,86 @@ namespace _011_PlaneQuadTree
 		private bool paused = false;
 		private List<PlaneQuadTree> quads = new List<PlaneQuadTree>();
 		private Vector2 targetPosition;
-		private List<Matrix4x4> planes = new List<Matrix4x4>();
-		private Color[] depthDeltaData = new Color[MaxInstanceDataCount];
+		private List<InstanceData> instances = new List<InstanceData>();
+		//private Matrix4x4[] planes = new Matrix4x4[MaxInstanceDataCount];
+		//private Color[] depthDeltaData = new Color[MaxInstanceDataCount];
+		private ComputeBuffer instancesBuffer;
+		private ComputeBuffer argsBuffer;
 
-		private const int MaxInstanceDataCount = 1023;
+		private const int MaxInstanceDataCount = 200;
+		private Bounds bounds;
+
+		private struct InstanceData
+		{
+			public Matrix4x4 matrix;
+
+			public static int Size()
+			{
+				return sizeof(float) * 4 * 4;
+			}
+		}
 
 		private void Update()
-		{	
+		{
 			RebuildPlaneList();
 
-			Graphics.DrawMeshInstanced(
-				mesh: mesh,
-				submeshIndex: 0,
-				material: material,
-				matrices: planes,
-				properties: null,
-				castShadows: UnityEngine.Rendering.ShadowCastingMode.Off,
-				receiveShadows: true);
+			//instances.Clear();
+			
+			//InstanceData data = new InstanceData();
+			//data.matrix = Matrix4x4.TRS(transform.position, Quaternion.identity, transform.localScale);
+			//instances.Add(data);
+
+			//if (instances.Count == 0)
+			//	return;
+
+			//if (instancesBuffer != null)
+			//{
+			//	instancesBuffer.Release();
+			//}
+			//instancesBuffer = new ComputeBuffer(instances.Count, InstanceData.Size());
+			//instancesBuffer.SetData(instances.ToArray());
+			//material.SetBuffer("_PerInstanceData", instancesBuffer);
+
+			//uint[] args = new uint[5] { 0, 0, 0, 0, 0 };
+			//args[0] = (uint)mesh.GetIndexCount(0);
+			//args[1] = (uint)instances.Count;
+			//args[2] = (uint)mesh.GetIndexStart(0);
+			//args[3] = (uint)mesh.GetBaseVertex(0);
+
+			//if (argsBuffer != null)
+			//{
+			//	argsBuffer.Release();
+			//}
+			//argsBuffer = new ComputeBuffer(1, args.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
+			//argsBuffer.SetData(args);
+
+			//Graphics.DrawMeshInstanced(
+			//	mesh: mesh,
+			//	submeshIndex: 0,
+			//	material: material,
+			//	matrices: planes,
+			//	count: instanceCount,
+			//	properties: null,
+			//	castShadows: UnityEngine.Rendering.ShadowCastingMode.Off,
+			//	receiveShadows: true);
+
+			if (argsBuffer != null)
+			{
+				Graphics.DrawMeshInstancedIndirect(
+					mesh: mesh,
+					submeshIndex: 0,
+					material: material,
+					bounds: bounds,
+					bufferWithArgs: argsBuffer,
+					argsOffset: 0,
+					properties: null,
+					castShadows: UnityEngine.Rendering.ShadowCastingMode.Off,
+					receiveShadows: true);
+			}
 		}
 
 		private void RebuildPlaneList()
 		{
-			planes.Clear();
 
 			if (Input.GetKeyDown(KeyCode.K))
 				paused = !paused;
@@ -128,11 +189,13 @@ namespace _011_PlaneQuadTree
 			DestroyTree(root);
 			root = null;
 			quads.Clear();
-			
+			bounds = new Bounds();
+
 			// rebuild the quadtree
 			BuildRoot();
 			UpdateQuad(root);
 
+			instances.Clear();
 			// update quads data
 			for (int i = 0; i < quads.Count; ++i)
 			{
@@ -143,13 +206,57 @@ namespace _011_PlaneQuadTree
 				if (!drawOutsideRegion && !isInsideRegion)
 					continue;
 				var scale = new Vector3(qt.rect.size.x / planeSize, 1, qt.rect.size.y / planeSize);
-				Matrix4x4 planeMatrix = Matrix4x4.TRS(GetQuatPositionWS(qt), Quaternion.identity, scale);
-				var instanceId = planes.Count;
-				planes.Add(planeMatrix);
-				depthDeltaData[instanceId] = FindNeighborDepth(qt);
+				var pos = GetQuatPositionWS(qt);
+				bounds.Encapsulate(pos);
+			
+				var instanceId = instances.Count;
+				InstanceData data = new InstanceData();
+				data.matrix = Matrix4x4.TRS(pos, Quaternion.identity, scale);
+				//depthDeltaData[instanceId] = FindNeighborDepth(qt);
+				instances.Add(data);
+				qt.instanceId = instanceId;
 			}
 
-			material.SetColorArray("_depthDelta", depthDeltaData);
+			if (instances.Count == 0)
+				return;
+
+			if (instancesBuffer != null)
+			{
+				instancesBuffer.Release();
+			}
+			instancesBuffer = new ComputeBuffer(instances.Count, InstanceData.Size());
+			instancesBuffer.SetData(instances.ToArray());
+			material.SetBuffer("_PerInstanceData", instancesBuffer);
+
+			uint[] args = new uint[5] { 0, 0, 0, 0, 0 };
+			args[0] = (uint)mesh.GetIndexCount(0);
+			args[1] = (uint)instances.Count;
+			args[2] = (uint)mesh.GetIndexStart(0);
+			args[3] = (uint)mesh.GetBaseVertex(0);
+
+			if (argsBuffer != null)
+			{
+				argsBuffer.Release();
+			}
+			argsBuffer = new ComputeBuffer(1, args.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
+			argsBuffer.SetData(args);
+
+			//material.SetColorArray("depthDeltaData", depthDeltaData);
+			//material.SetMatrixArray("_objectToWorld", planes);
+		}
+
+		private void OnDisable()
+		{
+			if (instancesBuffer != null)
+			{
+				instancesBuffer.Release();
+				instancesBuffer = null;
+			}
+			if (argsBuffer != null)
+			{
+				argsBuffer.Release();
+				argsBuffer = null;
+			}
 		}
 
 		private Vector3 GetQuatPositionWS(PlaneQuadTree qt)
@@ -298,7 +405,7 @@ namespace _011_PlaneQuadTree
 #if UNITY_EDITOR
 				if (!qt.HasChilds)
 				{
-					Handles.Label(GetQuatPositionWS(qt), $"{qt.index}/*:{GetViewportArea(qt):F2}*/");
+					Handles.Label(GetQuatPositionWS(qt), $"{qt.instanceId}");
 
 					Vector2[] dirs = { Vector2.left, Vector2.up, Vector2.right, Vector2.down };
 
@@ -326,11 +433,11 @@ namespace _011_PlaneQuadTree
 			Gizmos.DrawLine(v4, v1);
 		}
 
-		private Color32 FindNeighborDepth(PlaneQuadTree qt)
+		private Color FindNeighborDepth(PlaneQuadTree qt)
 		{
 			Vector2[] dirs = { Vector2.left, Vector2.up, Vector2.right, Vector2.down };
 
-			Color32 packedDepth = new Color32();
+			Color packedDepth = new Color();
 			for (int i = 0; i < 4; ++i)
 			{
 				if (root.TryFind(qt.rect.center + dirs[i] * qt.rect.size.x, out var neighbor))
@@ -339,7 +446,7 @@ namespace _011_PlaneQuadTree
 					{
 						var delta = qt.depth - neighbor.depth;
 						qt.neighborDepthDelta[i] = delta;
-						packedDepth[i] = (byte)delta;
+						packedDepth[i] = delta;
 					}
 				}
 				
