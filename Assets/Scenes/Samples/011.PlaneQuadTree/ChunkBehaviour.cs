@@ -19,7 +19,8 @@ namespace _011_PlaneQuadTree
 		public Rect rect;
 		public int depth;
 		public PlaneQuadTree[] childs = new PlaneQuadTree[_count];
-		public int[] neighborDepthDelta = new int[_count];
+		public PlaneQuadTree[] neibhbors = new PlaneQuadTree[_count];
+		public UInt32 neighborDelta = 0;
 		public int index;
 		public int instanceId;
 
@@ -38,8 +39,9 @@ namespace _011_PlaneQuadTree
 			for (int i = 0; i < _count; ++i)
 			{
 				childs[i] = null;
-				neighborDepthDelta[i] = -1;
+				neibhbors[i] = null;
 			}
+			neighborDelta = 0;
 		}
 
 		public bool TryFind(Vector2 pos, out PlaneQuadTree outQt)
@@ -60,6 +62,18 @@ namespace _011_PlaneQuadTree
 			}
 			return true;
 		}
+
+		public void SetNeightborDelta(int i, int depth)
+		{
+			neighborDelta |= (UInt32)(depth << (i*8));
+		}
+
+		public int GetNeightborDelta(int i)
+		{
+			return (int)(neighborDelta >> (i*8)) & 0x000F;
+		}
+
+		public static readonly Vector2[] Neighbors = { Vector2.left, Vector2.up, Vector2.right, Vector2.down };
 	}
 
 	public class ChunkBehaviour : MonoBehaviour
@@ -102,10 +116,11 @@ namespace _011_PlaneQuadTree
 		private struct InstanceData
 		{
 			public Matrix4x4 matrix;
+			public UInt32 neightborDelta;
 
 			public static int Size()
 			{
-				return sizeof(float) * 4 * 4;
+				return sizeof(float) * 4 * 4 + sizeof(UInt32);
 			}
 		}
 
@@ -213,7 +228,8 @@ namespace _011_PlaneQuadTree
 				var instanceId = instances.Count;
 				InstanceData data = new InstanceData();
 				data.matrix = Matrix4x4.TRS(pos, Quaternion.identity, scale);
-				//depthDeltaData[instanceId] = FindNeighborDepth(qt);
+				FindNeighborDepth(qt);
+				data.neightborDelta = qt.neighborDelta;
 				instances.Add(data);
 				qt.instanceId = instanceId;
 			}
@@ -431,14 +447,23 @@ namespace _011_PlaneQuadTree
 #if UNITY_EDITOR
 				if (!qt.HasChilds)
 				{
-					Handles.Label(GetQuatPositionWS(qt), $"{qt.instanceId}");
+					Handles.Label(GetQuatPositionWS(qt), $"{qt.instanceId}:{qt.depth}");
 
-					Vector2[] dirs = { Vector2.left, Vector2.up, Vector2.right, Vector2.down };
+					Vector2[] dirs = PlaneQuadTree.Neighbors;
 
 					for (int k = 0; k < 4; ++k)
 					{
 						var pos = qt.rect.center + dirs[k] * qt.rect.size.x * 0.45f;
-						Handles.Label(GetPositionWS(pos), $"{qt.neighborDepthDelta[k]}");
+
+						//if (qt.neibhbors[k] == null)
+						//{
+						//	Handles.Label(GetPositionWS(pos), $"=");
+						//}
+						//else
+						//{
+						//	Handles.Label(GetPositionWS(pos), $"{qt.neibhbors[k].instanceId}:{qt.neibhbors[k].depth}");
+						//}
+						Handles.Label(GetPositionWS(pos), $"{qt.GetNeightborDelta(k)}");
 					}
 				}
 #endif
@@ -459,25 +484,23 @@ namespace _011_PlaneQuadTree
 			Gizmos.DrawLine(v4, v1);
 		}
 
-		private Color FindNeighborDepth(PlaneQuadTree qt)
+		private void FindNeighborDepth(PlaneQuadTree qt)
 		{
-			Vector2[] dirs = { Vector2.left, Vector2.up, Vector2.right, Vector2.down };
+			Vector2[] dirs = PlaneQuadTree.Neighbors;
 
-			Color packedDepth = new Color();
-			for (int i = 0; i < 4; ++i)
+			for (int i = 0; i < dirs.Length; ++i)
 			{
 				if (root.TryFind(qt.rect.center + dirs[i] * qt.rect.size.x, out var neighbor))
 				{
 					if (neighbor.depth < qt.depth)
 					{
 						var delta = qt.depth - neighbor.depth;
-						qt.neighborDepthDelta[i] = delta;
-						packedDepth[i] = delta;
+						qt.SetNeightborDelta(i, delta);
+						qt.neibhbors[i] = neighbor;
 					}
 				}
 				
 			}
-			return packedDepth;
 		}
 	}
 

@@ -28,7 +28,8 @@ void dummy(){
 // ----------------------------------------------------------------------------------
 
 struct InstanceData {
-	float4x4 m;
+	float4x4 m; // object to world
+	int nd; // neighbor delta
 };
 
 
@@ -98,6 +99,8 @@ void HeightModifier_float(float3 vOS, float heightVScale, float heightHScale, ou
 	//float3 vWS = mul(objectToWorld[unity_InstanceID], float4(vOS.xyz, 1)).xyz;
 	//height = ClassicNoise(vWS * heightHScale);
 	height = ClassicNoise(vWS * heightHScale);	
+	height = 0;
+	
 	//height = ClassicNoise(mvOS * heightHScale);
 	//float4 depthDelta = depthDeltaData[unity_InstanceID];
 	//if (depthDelta.r - 1.0 <= 0.001)
