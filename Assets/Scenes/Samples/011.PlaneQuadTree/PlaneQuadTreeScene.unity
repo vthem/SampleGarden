@@ -599,7 +599,7 @@ MonoBehaviour:
   material: {fileID: 2100000, guid: bd39d69496d738f4782afce29a3f53cf, type: 2}
   drawOutsideRegion: 0
   maxDepth: 4
-  lodStrategy: 0
+  lodStrategy: 1
 --- !u!4 &1841395826
 Transform:
   m_ObjectHideFlags: 0

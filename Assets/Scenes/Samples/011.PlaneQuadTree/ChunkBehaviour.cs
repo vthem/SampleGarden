@@ -73,11 +73,12 @@ namespace _011_PlaneQuadTree
 		public Mesh mesh;
 		public Material material;
 		public bool drawOutsideRegion = false;
-		[Range(0, 7)] public int maxDepth = 4;
+		[Range(0, 15)] public int maxDepth = 4;
 
 		public enum LodStrategy
 		{
 			TargetPosition,
+			TargetPositionForceDepth,
 			CameraViewportArea
 		};
 		public LodStrategy lodStrategy = LodStrategy.TargetPosition;
@@ -320,7 +321,21 @@ namespace _011_PlaneQuadTree
 			if (null == qt)
 				return;
 
-			bool createChilds = ShouldCreateChilds_Distance(qt);
+			bool createChilds = false;
+			switch (lodStrategy)
+			{
+				case LodStrategy.TargetPosition:
+					createChilds = ShouldCreateChilds_Distance(qt);
+					break;
+				case LodStrategy.TargetPositionForceDepth:
+					createChilds = ShouldCreateChilds_ForceDepth(qt);
+					break;
+				case LodStrategy.CameraViewportArea:
+					break;
+				default:
+					break;
+			};
+			
 
 			if (createChilds)
 			{
@@ -347,7 +362,18 @@ namespace _011_PlaneQuadTree
 			var minSqDist = depthMinSqDistance[qt.depth];
 
 			return qtSqDist < minSqDist;
+		}
 
+		private bool ShouldCreateChilds_ForceDepth(PlaneQuadTree qt)
+		{
+			bool inside = qt.rect.Contains(targetPosition);
+			if (!inside)
+				return false;
+
+			if (qt.depth >= maxDepth)
+				return false;
+
+			return true;
 		}
 
 		private PlaneQuadTree CreateQuad(Rect rect, int depth)

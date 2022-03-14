@@ -96,7 +96,8 @@ void HeightModifier_float(float3 vOS, float heightVScale, float heightHScale, ou
 
 	float3 vWS = mul(objectToWorld, float4(vOS, 1)).xyz;
 	//float3 vWS = mul(objectToWorld[unity_InstanceID], float4(vOS.xyz, 1)).xyz;
-	height = ClassicNoise(vWS * heightHScale);
+	//height = ClassicNoise(vWS * heightHScale);
+	height = ClassicNoise(vWS * heightHScale);	
 	//height = ClassicNoise(mvOS * heightHScale);
 	//float4 depthDelta = depthDeltaData[unity_InstanceID];
 	//if (depthDelta.r - 1.0 <= 0.001)
