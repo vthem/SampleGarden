@@ -427,7 +427,7 @@ namespace _011_PlaneQuadTree
 #if UNITY_EDITOR
 				if (!qt.HasChilds)
 				{
-					Handles.Label(GetQuatPositionWS(qt), $"{qt.instanceId}:{qt.depth}");
+					Handles.Label(GetPositionWS(qt.rect.center), $"{qt.instanceId}:{qt.depth}");
 
 					Vector2[] dirs = PlaneQuadTree.Neighbors;
 
