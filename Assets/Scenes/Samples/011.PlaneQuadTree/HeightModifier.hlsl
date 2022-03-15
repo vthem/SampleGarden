@@ -63,6 +63,9 @@ void HeightModifier_float(float3 vOS, float heightVScale, float heightHScale, ou
 	InstanceData data = _PerInstanceData[unity_InstanceID];
 	float4x4 objectToWorld = data.m;
 
+	float3 vWS = mul(objectToWorld, float4(vOS, 1)).xyz;
+	height = ClassicNoise(vWS * heightHScale);
+	//height = 0;
 #endif
 	vOS.y = height * heightVScale;
 	vOutOS = vOS;

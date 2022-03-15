@@ -117,6 +117,36 @@ namespace _011_PlaneQuadTree
 			}
 		}
 
+		private void Start()
+		{
+			if (!mesh)
+			{
+				Debug.LogError("mesh property not set");
+				return;
+			}
+			CopyUpdateMesh();
+		}
+
+		private void CopyUpdateMesh()
+		{
+			// the goal is to have vertex position between 0..10 in the vertex shader, to use them as indices.
+
+			var meshCopy = new Mesh();
+			meshCopy.name = "chunk";
+			var vertices = mesh.vertices;
+			for (int i = 0; i < vertices.Length; ++i)
+			{
+				vertices[i] += new Vector3(5, 0, 5);
+			}
+			meshCopy.vertices = vertices;
+			meshCopy.triangles = mesh.triangles;
+			meshCopy.normals = mesh.normals;
+			meshCopy.uv = mesh.uv;
+
+			meshCopy.RecalculateBounds();
+			mesh = meshCopy;
+		}
+
 		private void Update()
 		{
 			RebuildPlaneList();
@@ -228,7 +258,7 @@ namespace _011_PlaneQuadTree
 
 		private Vector3 GetQuatPositionWS(PlaneQuadTree qt)
 		{
-			return GetPositionWS(qt.rect.center);
+			return GetPositionWS(qt.rect.min);
 		}
 
 		private Vector3 GetPositionWS(Vector2 v)
