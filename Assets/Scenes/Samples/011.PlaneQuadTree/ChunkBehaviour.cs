@@ -1,10 +1,7 @@
 using System.Collections.Generic;
 
 using UnityEngine;
-using System.Reflection;
 using System;
-using static UnityEditor.ShaderGraph.Internal.KeywordDependentCollection;
-using static UnityEditor.PlayerSettings;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -78,7 +75,6 @@ namespace _011_PlaneQuadTree
 
 	public class ChunkBehaviour : MonoBehaviour
 	{
-		private const int QuadTreeMaxSize = 200;
 		private const float planeSize = 10f;
 		public float[] depthMinDistance = new float[] { 20f, 5f, 2.5f, 1f };
 		public Rect region;
@@ -97,7 +93,6 @@ namespace _011_PlaneQuadTree
 		};
 		public LodStrategy lodStrategy = LodStrategy.TargetPosition;
 
-		//private PlaneQuadTree[] tree = new PlaneQuadTree[QuadTreeMaxSize];
 		private Stack<PlaneQuadTree> freeQuads = new Stack<PlaneQuadTree>();
 		private float[] depthMinSqDistance;
 		private PlaneQuadTree root;
@@ -105,8 +100,6 @@ namespace _011_PlaneQuadTree
 		private List<PlaneQuadTree> quads = new List<PlaneQuadTree>();
 		private Vector2 targetPosition;
 		private List<InstanceData> instances = new List<InstanceData>();
-		//private Matrix4x4[] planes = new Matrix4x4[MaxInstanceDataCount];
-		//private Color[] depthDeltaData = new Color[MaxInstanceDataCount];
 		private ComputeBuffer instancesBuffer;
 		private ComputeBuffer argsBuffer;
 
@@ -127,46 +120,6 @@ namespace _011_PlaneQuadTree
 		private void Update()
 		{
 			RebuildPlaneList();
-
-			//instances.Clear();
-			
-			//InstanceData data = new InstanceData();
-			//data.matrix = Matrix4x4.TRS(transform.position, Quaternion.identity, transform.localScale);
-			//instances.Add(data);
-
-			//if (instances.Count == 0)
-			//	return;
-
-			//if (instancesBuffer != null)
-			//{
-			//	instancesBuffer.Release();
-			//}
-			//instancesBuffer = new ComputeBuffer(instances.Count, InstanceData.Size());
-			//instancesBuffer.SetData(instances.ToArray());
-			//material.SetBuffer("_PerInstanceData", instancesBuffer);
-
-			//uint[] args = new uint[5] { 0, 0, 0, 0, 0 };
-			//args[0] = (uint)mesh.GetIndexCount(0);
-			//args[1] = (uint)instances.Count;
-			//args[2] = (uint)mesh.GetIndexStart(0);
-			//args[3] = (uint)mesh.GetBaseVertex(0);
-
-			//if (argsBuffer != null)
-			//{
-			//	argsBuffer.Release();
-			//}
-			//argsBuffer = new ComputeBuffer(1, args.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
-			//argsBuffer.SetData(args);
-
-			//Graphics.DrawMeshInstanced(
-			//	mesh: mesh,
-			//	submeshIndex: 0,
-			//	material: material,
-			//	matrices: planes,
-			//	count: instanceCount,
-			//	properties: null,
-			//	castShadows: UnityEngine.Rendering.ShadowCastingMode.Off,
-			//	receiveShadows: true);
 
 			if (argsBuffer != null)
 			{
@@ -257,9 +210,6 @@ namespace _011_PlaneQuadTree
 			}
 			argsBuffer = new ComputeBuffer(1, args.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
 			argsBuffer.SetData(args);
-
-			//material.SetColorArray("depthDeltaData", depthDeltaData);
-			//material.SetMatrixArray("_objectToWorld", planes);
 		}
 
 		private void OnDisable()
