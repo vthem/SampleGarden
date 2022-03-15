@@ -35,8 +35,6 @@ struct InstanceData {
 
 #define ARRAY_SIZE 200
 // left, up, right, down
-//float4 depthDeltaData[ARRAY_SIZE];
-//float4x4 _objectToWorld[ARRAY_SIZE];
 
 #ifdef UNITY_PROCEDURAL_INSTANCING_ENABLED
 
@@ -46,12 +44,6 @@ void vertInstancingMatrices(inout float4x4 objectToWorld, out float4x4 worldToOb
 	InstanceData data = _PerInstanceData[unity_InstanceID];
 
 	objectToWorld = data.m;
-
-	//float3 pos = float4(2, 0, 0, 2);
-	//objectToWorld._11_21_31_41 = float4(pos.w, 0, 0, 0);
-    //objectToWorld._12_22_32_42 = float4(0, pos.w, 0, 0);
-    //objectToWorld._13_23_33_43 = float4(0, 0, pos.w, 0);
-    //objectToWorld._14_24_34_44 = float4(pos.xyz, 1);
 
     worldToObject = objectToWorld;
     worldToObject._14_24_34 *= -1;
@@ -65,55 +57,12 @@ void vertInstancingSetup() {
 
 void HeightModifier_float(float3 vOS, float heightVScale, float heightHScale, out float3 vOutOS)
 {
-	const float indexMask[44] = {
-	//  0  1  2  3  4  5  6  7  8  9  10
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  0, // depthDelta = 0
-		0, 1, 0, 1, 0, 1, 0, 1, 0, 1,  0, // depthDelta = 1
-		0, 1, 1, 1, 1, 0, 1, 1, 1, 1,  0, // depthDelta = 2
-		0, 1, 1, 1, 1, 1, 1, 1, 1, 1,  0, // depthDelta = 3
-	};
-
-	const float indexMin[44] = {
-	//  0  1  2  3  4  5  6  7  8  9  10
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  0, // depthDelta = 0
-		0, 0, 0, 2, 0, 4, 0, 6, 0, 8,  0, // depthDelta = 1
-		0, 1, 1, 1, 1, 0, 1, 1, 1, 1,  0, // depthDelta = 2
-		0, 1, 1, 1, 1, 1, 1, 1, 1, 1,  0, // depthDelta = 3
-	};
-
-	const float indexMax[44] = {
-	//  0  1  2  3  4  5  6  7  8  9  10
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  0, // depthDelta = 0
-		0, 2, 0, 4, 0, 6, 0, 8, 0, 10,  0, // depthDelta = 1
-		0, 1, 1, 1, 1, 0, 1, 1, 1, 1,  0, // depthDelta = 2
-		0, 1, 1, 1, 1, 1, 1, 1, 1, 1,  0, // depthDelta = 3
-	};
-
 	float height = 0.0;
 #if UNITY_ANY_INSTANCING_ENABLED
 
 	InstanceData data = _PerInstanceData[unity_InstanceID];
 	float4x4 objectToWorld = data.m;
 
-	float3 vWS = mul(objectToWorld, float4(vOS, 1)).xyz;
-	//float3 vWS = mul(objectToWorld[unity_InstanceID], float4(vOS.xyz, 1)).xyz;
-	//height = ClassicNoise(vWS * heightHScale);
-	height = ClassicNoise(vWS * heightHScale);	
-	height = 0;
-	
-	//height = ClassicNoise(mvOS * heightHScale);
-	//float4 depthDelta = depthDeltaData[unity_InstanceID];
-	//if (depthDelta.r - 1.0 <= 0.001)
-	//{
-		//height = indexMask[round(depthDelta.r * 11 + vOS.x + 5)];
-		//height = round(round(depthDelta.r) * 11 + round(vOS.x + 5));
-		//height = round(depthDelta.r);
-		//height = round(vOS.x + 5.0) / 10.0;
-	//	//height = vOS.x + 5;
-	//}
-	//height += unity_InstanceID;
-	//if (unity_InstanceID != 4)
-		//height = 0;
 #endif
 	vOS.y = height * heightVScale;
 	vOutOS = vOS;
