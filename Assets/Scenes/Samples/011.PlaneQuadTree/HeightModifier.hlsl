@@ -4,6 +4,8 @@
 
 #include "Packages/jp.keijiro.noiseshader/Shader/ClassicNoise3D.hlsl"
 
+// from https://gist.github.com/Cyanilux/4046e7bf3725b8f64761bf6cf54a16eb
+
 // ----------------------------------------------------------------------------------
 
 // Graph should contain Boolean Keyword, "PROCEDURAL_INSTANCING_ON", Global, Multi-Compile.
@@ -28,7 +30,8 @@ void dummy(){
 // ----------------------------------------------------------------------------------
 
 struct InstanceData {
-	float4x4 m; // object to world
+	float4x4 objectToWorld; // object to world
+	float4x4 worldToObject;
 	int nd; // neighbor delta
 };
 
@@ -40,18 +43,10 @@ struct InstanceData {
 
 StructuredBuffer<InstanceData> _PerInstanceData;
 
-void vertInstancingMatrices(inout float4x4 objectToWorld, out float4x4 worldToObject) {
-	InstanceData data = _PerInstanceData[unity_InstanceID];
-
-	objectToWorld = data.m;
-
-    worldToObject = objectToWorld;
-    worldToObject._14_24_34 *= -1;
-    worldToObject._11_22_33 = 1.0f / worldToObject._11_22_33;
-}
-
 void vertInstancingSetup() {
-	vertInstancingMatrices(unity_ObjectToWorld, unity_WorldToObject);
+	InstanceData data = _PerInstanceData[unity_InstanceID];
+	unity_ObjectToWorld = data.objectToWorld;
+	unity_WorldToObject = data.worldToObject;
 }
 #endif
 
@@ -61,14 +56,32 @@ void HeightModifier_float(float3 vOS, float heightVScale, float heightHScale, ou
 #if UNITY_ANY_INSTANCING_ENABLED
 
 	InstanceData data = _PerInstanceData[unity_InstanceID];
-	float4x4 objectToWorld = data.m;
 
-	float3 vWS = mul(objectToWorld, float4(vOS, 1)).xyz;
+	float3 vWS = mul(unity_ObjectToWorld, float4(vOS, 1)).xyz;
 	height = ClassicNoise(vWS * heightHScale);
-	//height = 0;
+	if (unity_InstanceID == 7 || unity_InstanceID == 10)
+	{
+		if (round(vOS.z) == 0)
+		{
+			int delta = (data.nd >> 8*3) & 0x000000ff;
+			int inter = pow(2, delta);
+			float t = vWS.x % (0.125*inter);
+			float lb = vWS.x - t; // lower bound
+			float up = vWS.x + (0.125*inter); // upper bound
+			
+			float lb_height = ClassicNoise(float3(lb, vWS.yz) * heightHScale);
+			float ub_height = ClassicNoise(float3(up, vWS.yz) * heightHScale);
+			//height = lerp(lb_height, ub_height, t);
+			//if ((vWS.x % (0.125*inter)) != 0)
+			//{
+			//	height = 0;
+			//}
+		}
+	}
 #endif
-	vOS.y = height * heightVScale;
-	vOutOS = vOS;
+	//vOS.y = height * heightVScale;
+	vWS.y = height * heightVScale;
+	vOutOS = mul(unity_WorldToObject, float4(vWS, 1)).xyz;
 }
 
 // Obtain InstanceID. e.g. Can be used as a Seed into Random Range node to generate random data per instance

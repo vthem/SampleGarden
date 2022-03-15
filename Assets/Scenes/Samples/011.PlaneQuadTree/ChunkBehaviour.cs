@@ -108,12 +108,13 @@ namespace _011_PlaneQuadTree
 
 		private struct InstanceData
 		{
-			public Matrix4x4 matrix;
+			public Matrix4x4 objectToWorld;
+			public Matrix4x4 worldToObject;
 			public UInt32 neightborDelta;
 
 			public static int Size()
 			{
-				return sizeof(float) * 4 * 4 + sizeof(UInt32);
+				return sizeof(float) * 4 * 4 * 2 + sizeof(UInt32);
 			}
 		}
 
@@ -210,7 +211,8 @@ namespace _011_PlaneQuadTree
 			
 				var instanceId = instances.Count;
 				InstanceData data = new InstanceData();
-				data.matrix = Matrix4x4.TRS(pos, Quaternion.identity, scale);
+				data.objectToWorld = Matrix4x4.TRS(pos, Quaternion.identity, scale);
+				data.worldToObject = data.objectToWorld.inverse;
 				FindNeighborDepth(qt);
 				data.neightborDelta = qt.neighborDelta;
 				instances.Add(data);
