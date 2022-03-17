@@ -46,8 +46,7 @@ void vertInstancingSetup() {
 }
 #endif
 
-float _quadWidth;
-float _quadHeight;
+float _rootQuadSize;
 
 void HeightModifier_float(float3 vOS, float heightVScale, float heightHScale, out float3 vOutOS)
 {
@@ -58,31 +57,31 @@ void HeightModifier_float(float3 vOS, float heightVScale, float heightHScale, ou
 
 	float3 vWS = mul(unity_ObjectToWorld, float4(vOS, 1)).xyz;
 	height = ClassicNoise(vWS * heightHScale);
-	//height = 0;
-	if (unity_InstanceID == 7 || unity_InstanceID == 10)
+	//if (unity_InstanceID == 7 || unity_InstanceID == 10)
 	{
-		if (round(vOS.z) == 0 /*&& round(vOS.x) == 2*/)
+		if (round(vOS.z) == 0)
 		{
 			int dn = (data.depthInfo >> 6 * 3) & 0x0000003f;
 			int d = (data.depthInfo >> 6 * 4) & 0x0000003f;
-			float step_d = _quadWidth / pow(2, d+1);
-			float step_dn = _quadWidth / pow(2, (d - dn) + 1);
+			float step_dn = 0.1 * _rootQuadSize / pow(2, (d - dn));
 
-			float ub = vWS.x + step_dn % vWS.x;
+			float ub = vWS.x + step_dn - vWS.x % step_dn;
+			float lb = ub - step_dn;
 			float3 ub_vWS = float3(ub, vWS.yz);
-			float3 lb_vWS = float3(ub - step_dn, vWS.yz);
+			float3 lb_vWS = float3(lb, vWS.yz);
 
 			float ub_height = ClassicNoise(ub_vWS * heightHScale);
 			float lb_height = ClassicNoise(lb_vWS * heightHScale);
 
-			float t_d = (step_dn - step_dn % vWS.x) / step_dn;
+			float t_d = (vWS.x - lb) / (ub - lb);
 			height = lerp(lb_height, ub_height, t_d);
 		}
 	}
-#endif
-	//vOS.y = height * heightVScale;
 	vWS.y = height * heightVScale;
 	vOutOS = mul(unity_WorldToObject, float4(vWS, 1)).xyz;
+#else
+	vOutOS = vOS;
+#endif
 }
 
 // Obtain InstanceID. e.g. Can be used as a Seed into Random Range node to generate random data per instance

@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 
 using UnityEngine;
-using System;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -249,8 +248,7 @@ namespace _011_PlaneQuadTree
 			instancesBuffer.SetData(instances.ToArray());
 			material.SetBuffer("_PerInstanceData", instancesBuffer);
 
-			material.SetFloat("_quadWidth", region.width);
-			material.SetFloat("_quadHeight", region.height);
+			material.SetFloat("_rootQuadSize", RootQuadSize);
 
 			uint[] args = new uint[5] { 0, 0, 0, 0, 0 };
 			args[0] = (uint)mesh.GetIndexCount(0);
@@ -298,12 +296,17 @@ namespace _011_PlaneQuadTree
 			return delta.x * delta.y;
 		}
 
+		private float RootQuadSize
+		{
+			get { return Mathf.Max(region.size.x, region.size.y); }
+		}
+
 		void BuildRoot()
 		{
 			if (root != null)
 				return;
 
-			var sqSize = Mathf.Max(region.size.x, region.size.y);
+			var sqSize = RootQuadSize;
 			var rootRect = new Rect(region.xMin, region.yMin, sqSize, sqSize);
 			root = CreateQuad(rootRect, 0);
 			
