@@ -32,12 +32,8 @@ void dummy(){
 struct InstanceData {
 	float4x4 objectToWorld; // object to world
 	float4x4 worldToObject;
-	int nd; // neighbor delta
+	int depthInfo; // packed depth information depth | left neighbor | up | right | down ..
 };
-
-
-#define ARRAY_SIZE 200
-// left, up, right, down
 
 #ifdef UNITY_PROCEDURAL_INSTANCING_ENABLED
 
@@ -50,6 +46,9 @@ void vertInstancingSetup() {
 }
 #endif
 
+float _quadWidth;
+float _quadHeight;
+
 void HeightModifier_float(float3 vOS, float heightVScale, float heightHScale, out float3 vOutOS)
 {
 	float height = 0.0;
@@ -59,23 +58,25 @@ void HeightModifier_float(float3 vOS, float heightVScale, float heightHScale, ou
 
 	float3 vWS = mul(unity_ObjectToWorld, float4(vOS, 1)).xyz;
 	height = ClassicNoise(vWS * heightHScale);
+	//height = 0;
 	if (unity_InstanceID == 7 || unity_InstanceID == 10)
 	{
-		if (round(vOS.z) == 0)
+		if (round(vOS.z) == 0 /*&& round(vOS.x) == 2*/)
 		{
-			int delta = (data.nd >> 8*3) & 0x000000ff;
-			int inter = pow(2, delta);
-			float t = vWS.x % (0.125*inter);
-			float lb = vWS.x - t; // lower bound
-			float up = vWS.x + (0.125*inter); // upper bound
-			
-			float lb_height = ClassicNoise(float3(lb, vWS.yz) * heightHScale);
-			float ub_height = ClassicNoise(float3(up, vWS.yz) * heightHScale);
-			//height = lerp(lb_height, ub_height, t);
-			//if ((vWS.x % (0.125*inter)) != 0)
-			//{
-			//	height = 0;
-			//}
+			int dn = (data.depthInfo >> 6 * 3) & 0x0000003f;
+			int d = (data.depthInfo >> 6 * 4) & 0x0000003f;
+			float step_d = _quadWidth / pow(2, d+1);
+			float step_dn = _quadWidth / pow(2, (d - dn) + 1);
+
+			float ub = vWS.x + step_dn % vWS.x;
+			float3 ub_vWS = float3(ub, vWS.yz);
+			float3 lb_vWS = float3(ub - step_dn, vWS.yz);
+
+			float ub_height = ClassicNoise(ub_vWS * heightHScale);
+			float lb_height = ClassicNoise(lb_vWS * heightHScale);
+
+			float t_d = (step_dn - step_dn % vWS.x) / step_dn;
+			height = lerp(lb_height, ub_height, t_d);
 		}
 	}
 #endif

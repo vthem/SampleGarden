@@ -14,10 +14,10 @@ namespace _011_PlaneQuadTree
 		private const int _count = 4;
 
 		public Rect rect;
-		public int depth;
+		//public int depth;
 		public PlaneQuadTree[] childs = new PlaneQuadTree[_count];
 		public PlaneQuadTree[] neibhbors = new PlaneQuadTree[_count];
-		public UInt32 neighborDelta = 0;
+		public int depthInfo = 0;
 		public int index;
 		public int instanceId;
 
@@ -31,14 +31,14 @@ namespace _011_PlaneQuadTree
 		public void Reset()
 		{
 			index = -1;
-			depth = -1;
+			depthInfo = 0;
 			rect = new Rect();
 			for (int i = 0; i < _count; ++i)
 			{
 				childs[i] = null;
 				neibhbors[i] = null;
 			}
-			neighborDelta = 0;
+			//neighborDelta = 0;
 		}
 
 		public bool TryFind(Vector2 pos, out PlaneQuadTree outQt)
@@ -60,14 +60,33 @@ namespace _011_PlaneQuadTree
 			return true;
 		}
 
+		const int depthBits = 6;
+		const int depthMask = 0x0000003F;
+		const int selftDepthInfoIndex = 4;
+
 		public void SetNeightborDelta(int i, int depth)
 		{
-			neighborDelta |= (UInt32)(depth << (i*8));
+			var mask = depthMask << (i * depthBits);
+			depthInfo &= ~mask;
+			depthInfo |= depth << (i * depthBits);
 		}
 
 		public int GetNeightborDelta(int i)
 		{
-			return (int)(neighborDelta >> (i*8)) & 0x000F;
+			return (depthInfo >> (i * depthBits)) & depthMask;
+		}
+
+		public int Depth
+		{
+			get
+			{
+				return (int)(depthInfo >> (selftDepthInfoIndex * depthBits)) & depthMask;
+			}
+			set
+			{
+				depthInfo &= ~0x3F000000;
+				depthInfo |= value << (selftDepthInfoIndex * depthBits);
+			}
 		}
 
 		public static readonly Vector2[] Neighbors = { Vector2.left, Vector2.up, Vector2.right, Vector2.down };
@@ -110,11 +129,11 @@ namespace _011_PlaneQuadTree
 		{
 			public Matrix4x4 objectToWorld;
 			public Matrix4x4 worldToObject;
-			public UInt32 neightborDelta;
+			public int depth;
 
 			public static int Size()
 			{
-				return sizeof(float) * 4 * 4 * 2 + sizeof(UInt32);
+				return sizeof(float) * 4 * 4 * 2 + sizeof(int);
 			}
 		}
 
@@ -214,7 +233,7 @@ namespace _011_PlaneQuadTree
 				data.objectToWorld = Matrix4x4.TRS(pos, Quaternion.identity, scale);
 				data.worldToObject = data.objectToWorld.inverse;
 				FindNeighborDepth(qt);
-				data.neightborDelta = qt.neighborDelta;
+				data.depth = qt.depthInfo;
 				instances.Add(data);
 				qt.instanceId = instanceId;
 			}
@@ -229,6 +248,9 @@ namespace _011_PlaneQuadTree
 			instancesBuffer = new ComputeBuffer(instances.Count, InstanceData.Size());
 			instancesBuffer.SetData(instances.ToArray());
 			material.SetBuffer("_PerInstanceData", instancesBuffer);
+
+			material.SetFloat("_quadWidth", region.width);
+			material.SetFloat("_quadHeight", region.height);
 
 			uint[] args = new uint[5] { 0, 0, 0, 0, 0 };
 			args[0] = (uint)mesh.GetIndexCount(0);
@@ -347,7 +369,7 @@ namespace _011_PlaneQuadTree
 
 		private bool ShouldCreateChilds_Distance(PlaneQuadTree qt)
 		{
-			if (qt.depth >= depthMinSqDistance.Length)
+			if (qt.Depth >= depthMinSqDistance.Length)
 				return false;
 
 			bool createChilds = qt.rect.Contains(targetPosition);
@@ -357,7 +379,7 @@ namespace _011_PlaneQuadTree
 			var qtSqSqSize = qt.rect.size.x * qt.rect.size.x;
 			var qtSqDist = (qt.rect.center - targetPosition).sqrMagnitude - qtSqSqSize;
 			qtSqDist = Mathf.Max(0, qtSqDist);
-			var minSqDist = depthMinSqDistance[qt.depth];
+			var minSqDist = depthMinSqDistance[qt.Depth];
 
 			return qtSqDist < minSqDist;
 		}
@@ -368,7 +390,7 @@ namespace _011_PlaneQuadTree
 			if (!inside)
 				return false;
 
-			if (qt.depth >= maxDepth)
+			if (qt.Depth >= maxDepth)
 				return false;
 
 			return true;
@@ -387,7 +409,7 @@ namespace _011_PlaneQuadTree
 			}
 
 			qt.rect = rect;
-			qt.depth = depth;
+			qt.Depth = depth;
 
 			for (int i = 0; i < qt.childs.Length; ++i)
 			{
@@ -408,16 +430,16 @@ namespace _011_PlaneQuadTree
 			Vector2 childSize = parent.rect.size / 2f;
 
 			Rect rect = new Rect(new Vector2(parent.rect.center.x - parent.rect.size.x * 0.5f, parent.rect.center.y - parent.rect.size.y * 0.5f), childSize);
-			parent.childs[0] = CreateQuad(rect, parent.depth + 1);
+			parent.childs[0] = CreateQuad(rect, parent.Depth + 1);
 
 			rect = new Rect(new Vector2(parent.rect.center.x - parent.rect.size.x * 0.5f, parent.rect.center.y), childSize);
-			parent.childs[1] = CreateQuad(rect, parent.depth + 1);
+			parent.childs[1] = CreateQuad(rect, parent.Depth + 1);
 
 			rect = new Rect(new Vector2(parent.rect.center.x, parent.rect.center.y), childSize);
-			parent.childs[2] = CreateQuad(rect, parent.depth + 1);
+			parent.childs[2] = CreateQuad(rect, parent.Depth + 1);
 
 			rect = new Rect(new Vector2(parent.rect.center.x, parent.rect.center.y - parent.rect.size.y * 0.5f), childSize);
-			parent.childs[3] = CreateQuad(rect, parent.depth + 1);
+			parent.childs[3] = CreateQuad(rect, parent.Depth + 1);
 		}
 
 		private void OnDrawGizmos()
@@ -429,7 +451,7 @@ namespace _011_PlaneQuadTree
 #if UNITY_EDITOR
 				if (!qt.HasChilds)
 				{
-					Handles.Label(GetPositionWS(qt.rect.center), $"{qt.instanceId}:{qt.depth}");
+					Handles.Label(GetPositionWS(qt.rect.center), $"{qt.instanceId}:{qt.Depth}");
 
 					Vector2[] dirs = PlaneQuadTree.Neighbors;
 
@@ -474,9 +496,9 @@ namespace _011_PlaneQuadTree
 			{
 				if (root.TryFind(qt.rect.center + dirs[i] * qt.rect.size.x, out var neighbor))
 				{
-					if (neighbor.depth < qt.depth)
+					if (neighbor.Depth < qt.Depth)
 					{
-						var delta = qt.depth - neighbor.depth;
+						var delta = qt.Depth - neighbor.Depth;
 						qt.SetNeightborDelta(i, delta);
 						qt.neibhbors[i] = neighbor;
 					}
