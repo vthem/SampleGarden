@@ -59,10 +59,14 @@ void HeightModifier_float(float3 vOS, float heightVScale, float heightHScale, ou
 	height = ClassicNoise(vWS * heightHScale);
 	//if (unity_InstanceID == 7 || unity_InstanceID == 10)
 	{
-		if (round(vOS.z) == 0)
+		int dn_left = (data.depthInfo >> 6 * 0) & 0x0000003f;
+		int dn_up = (data.depthInfo >> 6 * 1) & 0x0000003f;
+		int dn_right = (data.depthInfo >> 6 * 2) & 0x0000003f;
+		int dn_bottom = (data.depthInfo >> 6 * 3) & 0x0000003f;
+		int d = (data.depthInfo >> 6 * 4) & 0x0000003f;
+		if (round(vOS.z) == 0 && dn_bottom > 0)
 		{
-			int dn = (data.depthInfo >> 6 * 3) & 0x0000003f;
-			int d = (data.depthInfo >> 6 * 4) & 0x0000003f;
+			int dn = dn_bottom;
 			float step_dn = 0.1 * _rootQuadSize / pow(2, (d - dn));
 
 			float ub = vWS.x + step_dn - vWS.x % step_dn;
@@ -74,6 +78,54 @@ void HeightModifier_float(float3 vOS, float heightVScale, float heightHScale, ou
 			float lb_height = ClassicNoise(lb_vWS * heightHScale);
 
 			float t_d = (vWS.x - lb) / (ub - lb);
+			height = lerp(lb_height, ub_height, t_d);
+		}
+		if (round(vOS.z) == 10 && dn_up > 0)
+		{
+			int dn = dn_up;
+			float step_dn = 0.1 * _rootQuadSize / pow(2, (d - dn));
+
+			float ub = vWS.x + step_dn - vWS.x % step_dn;
+			float lb = ub - step_dn;
+			float3 ub_vWS = float3(ub, vWS.yz);
+			float3 lb_vWS = float3(lb, vWS.yz);
+
+			float ub_height = ClassicNoise(ub_vWS * heightHScale);
+			float lb_height = ClassicNoise(lb_vWS * heightHScale);
+
+			float t_d = (vWS.x - lb) / (ub - lb);
+			height = lerp(lb_height, ub_height, t_d);
+		}
+		if (round(vOS.x) == 0 && dn_left > 0)
+		{
+			int dn = dn_left;
+			float step_dn = 0.1 * _rootQuadSize / pow(2, (d - dn));
+
+			float ub = vWS.z + step_dn - vWS.z % step_dn;
+			float lb = ub - step_dn;
+			float3 ub_vWS = float3(vWS.xy, ub);
+			float3 lb_vWS = float3(vWS.xy, lb);
+
+			float ub_height = ClassicNoise(ub_vWS * heightHScale);
+			float lb_height = ClassicNoise(lb_vWS * heightHScale);
+
+			float t_d = (vWS.z - lb) / (ub - lb);
+			height = lerp(lb_height, ub_height, t_d);
+		}
+		if (round(vOS.x) == 10 && dn_right > 0)
+		{
+			int dn = dn_right;
+			float step_dn = 0.1 * _rootQuadSize / pow(2, (d - dn));
+
+			float ub = vWS.z + step_dn - vWS.z % step_dn;
+			float lb = ub - step_dn;
+			float3 ub_vWS = float3(vWS.xy, ub);
+			float3 lb_vWS = float3(vWS.xy, lb);
+
+			float ub_height = ClassicNoise(ub_vWS * heightHScale);
+			float lb_height = ClassicNoise(lb_vWS * heightHScale);
+
+			float t_d = (vWS.z - lb) / (ub - lb);
 			height = lerp(lb_height, ub_height, t_d);
 		}
 	}

@@ -82,7 +82,7 @@ Material:
     m_Floats:
     - BOOLEAN_BD4E4782B9B14A2BA060D158FD7FDC0B: 0
     - Vector1_a214727deee447478d89d3689b06fed9: 1
-    - Vector1_dc4b1bcb4e0c4f38b0dbf8e2b6c206de: 0
+    - Vector1_dc4b1bcb4e0c4f38b0dbf8e2b6c206de: 1.22
     - _AlphaClip: 0
     - _Blend: 0
     - _BumpScale: 1
