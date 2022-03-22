@@ -102,8 +102,8 @@ namespace _011_PlaneQuadTree
 		public Material material;
 		public bool drawOutsideRegion = false;
 		[Range(0, 15)] public int maxDepth = 4;
-		float heightHScale = 1.01f;
-		float heightVScale = 1.01f;
+		public float heightHScale = 1.01f;
+		public float heightVScale = 1.01f;
 
 		public enum LodStrategy
 		{
