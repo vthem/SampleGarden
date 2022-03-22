@@ -102,6 +102,8 @@ namespace _011_PlaneQuadTree
 		public Material material;
 		public bool drawOutsideRegion = false;
 		[Range(0, 15)] public int maxDepth = 4;
+		float heightHScale = 1.01f;
+		float heightVScale = 1.01f;
 
 		public enum LodStrategy
 		{
@@ -249,6 +251,8 @@ namespace _011_PlaneQuadTree
 			material.SetBuffer("_PerInstanceData", instancesBuffer);
 
 			material.SetFloat("_rootQuadSize", RootQuadSize);
+			material.SetFloat("_heightVScale", heightVScale);
+			material.SetFloat("_heightHScale", heightHScale);
 
 			uint[] args = new uint[5] { 0, 0, 0, 0, 0 };
 			args[0] = (uint)mesh.GetIndexCount(0);

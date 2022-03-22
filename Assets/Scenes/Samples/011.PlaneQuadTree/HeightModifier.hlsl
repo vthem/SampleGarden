@@ -47,8 +47,10 @@ void vertInstancingSetup() {
 #endif
 
 float _rootQuadSize;
+float _heightVScale;
+float _heightHScale;
 
-void HeightModifier_float(float3 vOS, float heightVScale, float heightHScale, out float3 vOutOS)
+void HeightModifier_float(float3 vOS, out float3 vOutOS)
 {
 	float height = 0.0;
 #if UNITY_ANY_INSTANCING_ENABLED
@@ -56,7 +58,7 @@ void HeightModifier_float(float3 vOS, float heightVScale, float heightHScale, ou
 	InstanceData data = _PerInstanceData[unity_InstanceID];
 
 	float3 vWS = mul(unity_ObjectToWorld, float4(vOS, 1)).xyz;
-	height = ClassicNoise(vWS * heightHScale);
+	height = ClassicNoise(vWS * _heightHScale);
 	//if (unity_InstanceID == 7 || unity_InstanceID == 10)
 	{
 		int dn_left = (data.depthInfo >> 6 * 0) & 0x0000003f;
@@ -74,13 +76,13 @@ void HeightModifier_float(float3 vOS, float heightVScale, float heightHScale, ou
 			float3 ub_vWS = float3(ub, vWS.yz);
 			float3 lb_vWS = float3(lb, vWS.yz);
 
-			float ub_height = ClassicNoise(ub_vWS * heightHScale);
-			float lb_height = ClassicNoise(lb_vWS * heightHScale);
+			float ub_height = ClassicNoise(ub_vWS * _heightHScale);
+			float lb_height = ClassicNoise(lb_vWS * _heightHScale);
 
 			float t_d = (vWS.x - lb) / (ub - lb);
 			height = lerp(lb_height, ub_height, t_d);
 		}
-		if (round(vOS.z) == 10 && dn_up > 0)
+		else if (round(vOS.z) == 10 && dn_up > 0)
 		{
 			int dn = dn_up;
 			float step_dn = 0.1 * _rootQuadSize / pow(2, (d - dn));
@@ -90,13 +92,13 @@ void HeightModifier_float(float3 vOS, float heightVScale, float heightHScale, ou
 			float3 ub_vWS = float3(ub, vWS.yz);
 			float3 lb_vWS = float3(lb, vWS.yz);
 
-			float ub_height = ClassicNoise(ub_vWS * heightHScale);
-			float lb_height = ClassicNoise(lb_vWS * heightHScale);
+			float ub_height = ClassicNoise(ub_vWS * _heightHScale);
+			float lb_height = ClassicNoise(lb_vWS * _heightHScale);
 
 			float t_d = (vWS.x - lb) / (ub - lb);
 			height = lerp(lb_height, ub_height, t_d);
 		}
-		if (round(vOS.x) == 0 && dn_left > 0)
+		else if (round(vOS.x) == 0 && dn_left > 0)
 		{
 			int dn = dn_left;
 			float step_dn = 0.1 * _rootQuadSize / pow(2, (d - dn));
@@ -106,13 +108,13 @@ void HeightModifier_float(float3 vOS, float heightVScale, float heightHScale, ou
 			float3 ub_vWS = float3(vWS.xy, ub);
 			float3 lb_vWS = float3(vWS.xy, lb);
 
-			float ub_height = ClassicNoise(ub_vWS * heightHScale);
-			float lb_height = ClassicNoise(lb_vWS * heightHScale);
+			float ub_height = ClassicNoise(ub_vWS * _heightHScale);
+			float lb_height = ClassicNoise(lb_vWS * _heightHScale);
 
 			float t_d = (vWS.z - lb) / (ub - lb);
 			height = lerp(lb_height, ub_height, t_d);
 		}
-		if (round(vOS.x) == 10 && dn_right > 0)
+		else if (round(vOS.x) == 10 && dn_right > 0)
 		{
 			int dn = dn_right;
 			float step_dn = 0.1 * _rootQuadSize / pow(2, (d - dn));
@@ -122,14 +124,14 @@ void HeightModifier_float(float3 vOS, float heightVScale, float heightHScale, ou
 			float3 ub_vWS = float3(vWS.xy, ub);
 			float3 lb_vWS = float3(vWS.xy, lb);
 
-			float ub_height = ClassicNoise(ub_vWS * heightHScale);
-			float lb_height = ClassicNoise(lb_vWS * heightHScale);
+			float ub_height = ClassicNoise(ub_vWS * _heightHScale);
+			float lb_height = ClassicNoise(lb_vWS * _heightHScale);
 
 			float t_d = (vWS.z - lb) / (ub - lb);
 			height = lerp(lb_height, ub_height, t_d);
 		}
 	}
-	vWS.y = height * heightVScale;
+	vWS.y = height * _heightVScale;
 	vOutOS = mul(unity_WorldToObject, float4(vWS, 1)).xyz;
 #else
 	vOutOS = vOS;
