@@ -50,6 +50,28 @@ float _rootQuadSize;
 float _heightVScale;
 float _heightHScale;
 
+float3 ComputeVertexWS(float3 vWS)
+{
+	vWS.y = ClassicNoise(vWS * _heightHScale);
+	return vWS;
+}
+
+void ComputeSeamParameter(int d, int dn, float xz, out float lb, out float ub, out float t)
+{
+	float step_dn = 0.1 * _rootQuadSize / pow(2, (d - dn));
+
+	ub = xz + step_dn - xz % step_dn;
+	lb = ub - step_dn;
+	t = (xz - lb) / (ub - lb);
+}
+
+float3 ComputeVertexInterpolation(float3 ul, float3 ub, float t)
+{
+	float3 ub_vWS = ComputeVertexWS(ub);
+	float3 lb_vWS = ComputeVertexWS(ul);
+	return lerp(lb_vWS, ub_vWS, t);
+}
+
 void HeightModifier_float(float3 vOS, out float3 vOutOS)
 {
 	float height = 0.0;
@@ -58,7 +80,7 @@ void HeightModifier_float(float3 vOS, out float3 vOutOS)
 	InstanceData data = _PerInstanceData[unity_InstanceID];
 
 	float3 vWS = mul(unity_ObjectToWorld, float4(vOS, 1)).xyz;
-	height = ClassicNoise(vWS * _heightHScale);
+	float3 vOutWS = float3(0, 0, 0);
 	//if (unity_InstanceID == 7 || unity_InstanceID == 10)
 	{
 		int dn_left = (data.depthInfo >> 6 * 0) & 0x0000003f;
@@ -66,73 +88,48 @@ void HeightModifier_float(float3 vOS, out float3 vOutOS)
 		int dn_right = (data.depthInfo >> 6 * 2) & 0x0000003f;
 		int dn_bottom = (data.depthInfo >> 6 * 3) & 0x0000003f;
 		int d = (data.depthInfo >> 6 * 4) & 0x0000003f;
+		
+		float ub, lb, t;
+		float3 ub_vWS;
+		float3 lb_vWS;
+
 		if (round(vOS.z) == 0 && dn_bottom > 0)
-		{
-			int dn = dn_bottom;
-			float step_dn = 0.1 * _rootQuadSize / pow(2, (d - dn));
+		{			
+			ComputeSeamParameter(d, dn_bottom, vWS.x, lb, ub, t);
 
-			float ub = vWS.x + step_dn - vWS.x % step_dn;
-			float lb = ub - step_dn;
-			float3 ub_vWS = float3(ub, vWS.yz);
-			float3 lb_vWS = float3(lb, vWS.yz);
-
-			float ub_height = ClassicNoise(ub_vWS * _heightHScale);
-			float lb_height = ClassicNoise(lb_vWS * _heightHScale);
-
-			float t_d = (vWS.x - lb) / (ub - lb);
-			height = lerp(lb_height, ub_height, t_d);
+			ub_vWS = float3(ub, vWS.yz);
+			lb_vWS = float3(lb, vWS.yz);
 		}
 		else if (round(vOS.z) == 10 && dn_up > 0)
 		{
-			int dn = dn_up;
-			float step_dn = 0.1 * _rootQuadSize / pow(2, (d - dn));
+			ComputeSeamParameter(d, dn_up, vWS.x, lb, ub, t);
 
-			float ub = vWS.x + step_dn - vWS.x % step_dn;
-			float lb = ub - step_dn;
-			float3 ub_vWS = float3(ub, vWS.yz);
-			float3 lb_vWS = float3(lb, vWS.yz);
-
-			float ub_height = ClassicNoise(ub_vWS * _heightHScale);
-			float lb_height = ClassicNoise(lb_vWS * _heightHScale);
-
-			float t_d = (vWS.x - lb) / (ub - lb);
-			height = lerp(lb_height, ub_height, t_d);
+			ub_vWS = float3(ub, vWS.yz);
+			lb_vWS = float3(lb, vWS.yz);
 		}
 		else if (round(vOS.x) == 0 && dn_left > 0)
 		{
-			int dn = dn_left;
-			float step_dn = 0.1 * _rootQuadSize / pow(2, (d - dn));
-
-			float ub = vWS.z + step_dn - vWS.z % step_dn;
-			float lb = ub - step_dn;
-			float3 ub_vWS = float3(vWS.xy, ub);
-			float3 lb_vWS = float3(vWS.xy, lb);
-
-			float ub_height = ClassicNoise(ub_vWS * _heightHScale);
-			float lb_height = ClassicNoise(lb_vWS * _heightHScale);
-
-			float t_d = (vWS.z - lb) / (ub - lb);
-			height = lerp(lb_height, ub_height, t_d);
+			ComputeSeamParameter(d, dn_left, vWS.z, lb, ub, t);
+			
+			ub_vWS = float3(vWS.xy, ub);
+			lb_vWS = float3(vWS.xy, lb);
 		}
 		else if (round(vOS.x) == 10 && dn_right > 0)
 		{
-			int dn = dn_right;
-			float step_dn = 0.1 * _rootQuadSize / pow(2, (d - dn));
-
-			float ub = vWS.z + step_dn - vWS.z % step_dn;
-			float lb = ub - step_dn;
-			float3 ub_vWS = float3(vWS.xy, ub);
-			float3 lb_vWS = float3(vWS.xy, lb);
-
-			float ub_height = ClassicNoise(ub_vWS * _heightHScale);
-			float lb_height = ClassicNoise(lb_vWS * _heightHScale);
-
-			float t_d = (vWS.z - lb) / (ub - lb);
-			height = lerp(lb_height, ub_height, t_d);
+			ComputeSeamParameter(d, dn_right, vWS.z, lb, ub, t);
+			
+			ub_vWS = float3(vWS.xy, ub);
+			lb_vWS = float3(vWS.xy, lb);
 		}
-	}
-	vWS.y = height * _heightVScale;
-	vOutOS = mul(unity_WorldToObject, float4(vWS, 1)).xyz;
+		else
+		{
+			ub_vWS = vWS;
+			lb_vWS = vWS;
+			t = 1.0;
+		}
+		vOutWS = ComputeVertexInterpolation(lb_vWS, ub_vWS, t);
+	}	
+	vOutOS = mul(unity_WorldToObject, float4(vOutWS, 1)).xyz;
 #else
 	vOutOS = vOS;
 #endif
