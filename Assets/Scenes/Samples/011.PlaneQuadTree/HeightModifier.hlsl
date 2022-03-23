@@ -3,6 +3,7 @@
 #define HEIGHTMODIFIER_HLSL
 
 #include "Packages/jp.keijiro.noiseshader/Shader/ClassicNoise3D.hlsl"
+#include "Assets/Scenes/Samples/010.WormMesh/WormMesh.hlsl"
 
 // from https://gist.github.com/Cyanilux/4046e7bf3725b8f64761bf6cf54a16eb
 
@@ -49,10 +50,29 @@ void vertInstancingSetup() {
 float _rootQuadSize;
 float _heightVScale;
 float _heightHScale;
+float _width;
+float _radius;
+
+float3 WormModifier(float3 vWS)
+{
+	float angle = (vWS.x / _width) * 2 * PI; // (5 + vOS.x) * 0.1 * PI * 0.5;
+	float3 pOnPath = float3(0, 0, vWS.z);
+	float3 tan = float3(0, 0, 1);
+	float4 q = fromToRotation(float3(0, 0, 1), tan);
+	float3 pOnCircleDir = rotateWithQuaternion(float3(cos(angle), sin(angle), 0), q);
+    //vOutWS = float3(vWS.x, pOnPath.y, vWS.z); // + pOnCircle;
+	float3 vOutWS = pOnPath + pOnCircleDir * _radius;
+	vOutWS += pOnCircleDir * ClassicNoise(vOutWS * _heightHScale);
+	return vOutWS;
+
+	// compute normal
+	//normal = -pOnCircleDir;
+}
 
 float3 ComputeVertexWS(float3 vWS)
 {
-	vWS.y = ClassicNoise(vWS * _heightHScale);
+	vWS = WormModifier(vWS);
+	//vWS.y = ClassicNoise(vWS * _heightHScale);
 	return vWS;
 }
 
