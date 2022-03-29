@@ -53,28 +53,30 @@ float _heightHScale;
 float _width;
 float _radius;
 
-float3 WormModifier(float3 vWS)
+void WormModifier(float3 vWS, out float3 vOutWS, out float3 normal)
 {
+	vOutWS = vWS; normal = float3(0, 1, 0); return;
+
 	float angle = (vWS.x / _width) * 2 * PI; // (5 + vOS.x) * 0.1 * PI * 0.5;
 	float3 pOnPath = float3(0, 0, vWS.z);
 	float3 tan = float3(0, 0, 1);
 	float4 q = fromToRotation(float3(0, 0, 1), tan);
 	float3 pOnCircleDir = rotateWithQuaternion(float3(cos(angle), sin(angle), 0), q);
     //vOutWS = float3(vWS.x, pOnPath.y, vWS.z); // + pOnCircle;
-	float3 vOutWS = pOnPath + pOnCircleDir * _radius;
-	vOutWS += pOnCircleDir * ClassicNoise(vOutWS * _heightHScale);
-	return vOutWS;
+	vOutWS = pOnPath + pOnCircleDir * _radius;
+	//vOutWS = pOnPath + pOnCircleDir * ClassicNoise(vOutWS * _heightHScale) * _heightVScale + pOnCircleDir * _radius;
+	//return vOutWS;
 
 	// compute normal
-	//normal = -pOnCircleDir;
+	normal = -pOnCircleDir;
 }
 
-float3 ComputeVertexWS(float3 vWS)
-{
-	vWS = WormModifier(vWS);
-	//vWS.y = ClassicNoise(vWS * _heightHScale);
-	return vWS;
-}
+//void ComputeVertexWS(float3 vWS, float3, )
+//{
+//	vWS = WormModifier(vWS);
+//	//vWS.y = ClassicNoise(vWS * _heightHScale);
+//	return vWS;
+//}
 
 void ComputeSeamParameter(int d, int dn, float xz, out float lb, out float ub, out float t)
 {
@@ -85,11 +87,13 @@ void ComputeSeamParameter(int d, int dn, float xz, out float lb, out float ub, o
 	t = (xz - lb) / (ub - lb);
 }
 
-float3 ComputeVertexInterpolation(float3 ul, float3 ub, float t)
+void ComputeVertexInterpolation(float3 lb, float3 ub, float t, out float3 vOutWS, out float3 normal)
 {
-	float3 ub_vWS = ComputeVertexWS(ub);
-	float3 lb_vWS = ComputeVertexWS(ul);
-	return lerp(lb_vWS, ub_vWS, t);
+	float3 ub_vWS, ub_normal, lb_vWS, lb_normal;
+	WormModifier(ub, ub_vWS, ub_normal);
+	WormModifier(lb, lb_vWS, lb_normal);
+	vOutWS = lerp(lb_vWS, ub_vWS, t);
+	normal = lerp(lb_normal, ub_normal, t);
 }
 
 void HeightModifier_float(float3 vOS, out float3 vOutOS)
@@ -146,8 +150,10 @@ void HeightModifier_float(float3 vOS, out float3 vOutOS)
 			ub_vWS = vWS;
 			lb_vWS = vWS;
 			t = 1.0;
-		}
-		vOutWS = ComputeVertexInterpolation(lb_vWS, ub_vWS, t);
+		}		
+		float3 normal;
+		ComputeVertexInterpolation(lb_vWS, ub_vWS, t, vOutWS, normal);
+		vOutWS += normal * ClassicNoise(vOutWS * _heightHScale) * _heightVScale;
 	}	
 	vOutOS = mul(unity_WorldToObject, float4(vOutWS, 1)).xyz;
 #else
