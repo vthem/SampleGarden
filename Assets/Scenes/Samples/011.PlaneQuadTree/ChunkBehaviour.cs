@@ -105,6 +105,9 @@ namespace _011_PlaneQuadTree
 		public float heightHScale = 1.01f;
 		public float heightVScale = 1.01f;
 		public float radius = 1f;
+		public float debug = 1f;
+		[Range(0, 1)] public int worm = 1;
+		[Range(0, 1)] public int perlin = 1;
 
 		public enum LodStrategy
 		{
@@ -256,6 +259,10 @@ namespace _011_PlaneQuadTree
 			material.SetFloat("_heightHScale", heightHScale);
 			material.SetFloat("_width", region.width);
 			material.SetFloat("_radius", radius);
+			material.SetFloat("_debug", debug);
+			material.SetInt("_worm", worm);
+			material.SetInt("_perlin", perlin);
+
 
 			uint[] args = new uint[5] { 0, 0, 0, 0, 0 };
 			args[0] = (uint)mesh.GetIndexCount(0);
@@ -469,15 +476,15 @@ namespace _011_PlaneQuadTree
 					{
 						var pos = qt.rect.center + dirs[k] * qt.rect.size.x * 0.45f;
 
-						//if (qt.neibhbors[k] == null)
-						//{
-						//	Handles.Label(GetPositionWS(pos), $"=");
-						//}
-						//else
-						//{
-						//	Handles.Label(GetPositionWS(pos), $"{qt.neibhbors[k].instanceId}:{qt.neibhbors[k].depth}");
-						//}
-						Handles.Label(GetPositionWS(pos), $"{qt.GetNeightborDelta(k)}");
+						if (qt.neibhbors[k] == null)
+						{
+							Handles.Label(GetPositionWS(pos), $"=");
+						}
+						else
+						{
+							Handles.Label(GetPositionWS(pos), $"{qt.neibhbors[k].instanceId}");
+						}
+						//Handles.Label(GetPositionWS(pos), $"{qt.GetNeightborDelta(k)}");
 					}
 				}
 #endif
@@ -504,7 +511,9 @@ namespace _011_PlaneQuadTree
 
 			for (int i = 0; i < dirs.Length; ++i)
 			{
-				if (root.TryFind(qt.rect.center + dirs[i] * qt.rect.size.x, out var neighbor))
+				var posToFind = qt.rect.center + dirs[i] * qt.rect.size.x;
+				posToFind.x = posToFind.x.Modulo(region.width);
+				if (root.TryFind(posToFind, out var neighbor))
 				{
 					if (neighbor.Depth < qt.Depth)
 					{
@@ -512,8 +521,7 @@ namespace _011_PlaneQuadTree
 						qt.SetNeightborDelta(i, delta);
 						qt.neibhbors[i] = neighbor;
 					}
-				}
-				
+				}	
 			}
 		}
 	}

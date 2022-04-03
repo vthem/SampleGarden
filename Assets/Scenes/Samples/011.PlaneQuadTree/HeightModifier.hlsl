@@ -52,10 +52,21 @@ float _heightVScale;
 float _heightHScale;
 float _width;
 float _radius;
+float _debug;
+int _worm;
+int _perlin;
 
 void WormModifier(float3 vWS, out float3 vOutWS, out float3 normal)
 {
-	vOutWS = vWS; normal = float3(0, 1, 0); return;
+	if (!_worm)
+	{
+		vOutWS = vWS; normal = float3(0, 1, 0);
+		if (_perlin)
+		{
+			vOutWS.y = ClassicNoise(vOutWS * _heightHScale) * _heightVScale;
+		}
+		return;
+	}
 
 	float angle = (vWS.x / _width) * 2 * PI; // (5 + vOS.x) * 0.1 * PI * 0.5;
 	float3 pOnPath = float3(0, 0, vWS.z);
@@ -64,7 +75,7 @@ void WormModifier(float3 vWS, out float3 vOutWS, out float3 normal)
 	float3 pOnCircleDir = rotateWithQuaternion(float3(cos(angle), sin(angle), 0), q);
     //vOutWS = float3(vWS.x, pOnPath.y, vWS.z); // + pOnCircle;
 	vOutWS = pOnPath + pOnCircleDir * _radius;
-	//vOutWS = pOnPath + pOnCircleDir * ClassicNoise(vOutWS * _heightHScale) * _heightVScale + pOnCircleDir * _radius;
+	vOutWS = pOnPath + pOnCircleDir * ClassicNoise(vOutWS * _heightHScale) * _heightVScale + pOnCircleDir * _radius;
 	//return vOutWS;
 
 	// compute normal
@@ -153,7 +164,7 @@ void HeightModifier_float(float3 vOS, out float3 vOutOS)
 		}		
 		float3 normal;
 		ComputeVertexInterpolation(lb_vWS, ub_vWS, t, vOutWS, normal);
-		vOutWS += normal * ClassicNoise(vOutWS * _heightHScale) * _heightVScale;
+		//vOutWS += normal * ClassicNoise(vOutWS * _heightHScale) * _heightVScale;
 	}	
 	vOutOS = mul(unity_WorldToObject, float4(vOutWS, 1)).xyz;
 #else

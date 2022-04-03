@@ -7,6 +7,11 @@ public static class Utils
         return (n % range + range) % range;
     }
 
+	public static float Modulo(this float n, float range)
+	{
+		return (n % range + range) % range;
+	}
+
     public static (bool, int) SetValue(this int target, int v)
     {
         return (target != v, v);
