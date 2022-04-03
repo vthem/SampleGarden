@@ -75,7 +75,10 @@ void WormModifier(float3 vWS, out float3 vOutWS, out float3 normal)
 	float3 pOnCircleDir = rotateWithQuaternion(float3(cos(angle), sin(angle), 0), q);
     //vOutWS = float3(vWS.x, pOnPath.y, vWS.z); // + pOnCircle;
 	vOutWS = pOnPath + pOnCircleDir * _radius;
-	vOutWS = pOnPath + pOnCircleDir * ClassicNoise(vOutWS * _heightHScale) * _heightVScale + pOnCircleDir * _radius;
+	if (_perlin)
+	{
+		vOutWS = pOnPath + pOnCircleDir * ClassicNoise(vOutWS * _heightHScale) * _heightVScale + pOnCircleDir * _radius;
+	}
 	//return vOutWS;
 
 	// compute normal

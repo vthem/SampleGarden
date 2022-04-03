@@ -30,6 +30,7 @@ namespace _011_PlaneQuadTree
 		public void Reset()
 		{
 			index = -1;
+			instanceId = -1;
 			depthInfo = 0;
 			rect = new Rect();
 			for (int i = 0; i < _count; ++i)
@@ -368,6 +369,7 @@ namespace _011_PlaneQuadTree
 					createChilds = ShouldCreateChilds_ForceDepth(qt);
 					break;
 				case LodStrategy.CameraViewportArea:
+					createChilds = ShouldCreateChilds_CameraViewportArea(qt);
 					break;
 				default:
 					break;
@@ -382,6 +384,17 @@ namespace _011_PlaneQuadTree
 			{
 				UpdateQuad(qt.childs[i]);
 			}
+		}
+
+		private bool ShouldCreateChilds_CameraViewportArea(PlaneQuadTree qt)
+		{
+			if (qt.Depth >= maxDepth)
+				return false;
+
+			if (qt.rect.Overlaps(region))
+				return true;
+
+			return false;
 		}
 
 		private bool ShouldCreateChilds_Distance(PlaneQuadTree qt)
