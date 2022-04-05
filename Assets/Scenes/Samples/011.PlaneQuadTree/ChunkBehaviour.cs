@@ -105,7 +105,9 @@ namespace _011_PlaneQuadTree
 		[Range(0, 15)] public int maxDepth = 4;
 		public float heightHScale = 1.01f;
 		public float heightVScale = 1.01f;
-		public float radius = 1f;
+		public float minRadius = 1f;
+		public float maxRadius = 1f;
+		public float radiusHScale = 1.01f;
 		public float debug = 1f;
 		[Range(0, 1)] public int worm = 1;
 		[Range(0, 1)] public int perlin = 1;
@@ -259,7 +261,10 @@ namespace _011_PlaneQuadTree
 			material.SetFloat("_heightVScale", heightVScale);
 			material.SetFloat("_heightHScale", heightHScale);
 			material.SetFloat("_width", region.width);
-			material.SetFloat("_radius", radius);
+			material.SetFloat("_height", region.height);
+			material.SetFloat("_minRadius", minRadius);
+			material.SetFloat("_maxRadius", maxRadius);
+			material.SetFloat("_radiusHScale", radiusHScale);
 			material.SetFloat("_debug", debug);
 			material.SetInt("_worm", worm);
 			material.SetInt("_perlin", perlin);

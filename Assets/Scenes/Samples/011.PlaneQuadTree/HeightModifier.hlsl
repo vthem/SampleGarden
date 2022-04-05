@@ -3,6 +3,7 @@
 #define HEIGHTMODIFIER_HLSL
 
 #include "Packages/jp.keijiro.noiseshader/Shader/ClassicNoise3D.hlsl"
+//#include "Packages/jp.keijiro.noiseshader/Shader/ClassicNoise2D.hlsl"
 #include "Assets/Scenes/Samples/010.WormMesh/WormMesh.hlsl"
 
 // from https://gist.github.com/Cyanilux/4046e7bf3725b8f64761bf6cf54a16eb
@@ -51,13 +52,16 @@ float _rootQuadSize;
 float _heightVScale;
 float _heightHScale;
 float _width;
-float _radius;
+float _height;
+float _minRadius;
+float _maxRadius;
+float _radiusHScale;
 float _debug;
 int _worm;
 int _perlin;
 
 void WormModifier(float3 vWS, out float3 vOutWS, out float3 normal)
-{
+{	
 	if (!_worm)
 	{
 		vOutWS = vWS; normal = float3(0, 1, 0);
@@ -68,16 +72,21 @@ void WormModifier(float3 vWS, out float3 vOutWS, out float3 normal)
 		return;
 	}
 
+	float zt = vWS.z / _height;
+	//float2 s2 = vWS.yz * 1.00001;
+	float radius = lerp(_minRadius, _maxRadius, ClassicNoise(vOutWS * _radiusHScale));
+
+
 	float angle = (vWS.x / _width) * 2 * PI; // (5 + vOS.x) * 0.1 * PI * 0.5;
 	float3 pOnPath = float3(0, 0, vWS.z);
 	float3 tan = float3(0, 0, 1);
 	float4 q = fromToRotation(float3(0, 0, 1), tan);
 	float3 pOnCircleDir = rotateWithQuaternion(float3(cos(angle), sin(angle), 0), q);
     //vOutWS = float3(vWS.x, pOnPath.y, vWS.z); // + pOnCircle;
-	vOutWS = pOnPath + pOnCircleDir * _radius;
+	vOutWS = pOnPath + pOnCircleDir * radius;
 	if (_perlin)
 	{
-		vOutWS = pOnPath + pOnCircleDir * ClassicNoise(vOutWS * _heightHScale) * _heightVScale + pOnCircleDir * _radius;
+		vOutWS = pOnPath + pOnCircleDir * ClassicNoise(vOutWS * _heightHScale) * _heightVScale + pOnCircleDir * radius;
 	}
 	//return vOutWS;
 
