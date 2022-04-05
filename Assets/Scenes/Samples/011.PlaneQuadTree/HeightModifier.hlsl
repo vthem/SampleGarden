@@ -60,11 +60,11 @@ float _debug;
 int _worm;
 int _perlin;
 
-void WormModifier(float3 vWS, out float3 vOutWS, out float3 normal)
+void WormModifier(float3 vWS, out float3 vOutWS)
 {	
 	if (!_worm)
 	{
-		vOutWS = vWS; normal = float3(0, 1, 0);
+		vOutWS = vWS;
 		if (_perlin)
 		{
 			vOutWS.y = ClassicNoise(vOutWS * _heightHScale) * _heightVScale;
@@ -88,18 +88,7 @@ void WormModifier(float3 vWS, out float3 vOutWS, out float3 normal)
 	{
 		vOutWS = pOnPath + pOnCircleDir * ClassicNoise(vOutWS * _heightHScale) * _heightVScale + pOnCircleDir * radius;
 	}
-	//return vOutWS;
-
-	// compute normal
-	normal = -pOnCircleDir;
 }
-
-//void ComputeVertexWS(float3 vWS, float3, )
-//{
-//	vWS = WormModifier(vWS);
-//	//vWS.y = ClassicNoise(vWS * _heightHScale);
-//	return vWS;
-//}
 
 void ComputeSeamParameter(int d, int dn, float xz, out float lb, out float ub, out float t)
 {
@@ -110,16 +99,31 @@ void ComputeSeamParameter(int d, int dn, float xz, out float lb, out float ub, o
 	t = (xz - lb) / (ub - lb);
 }
 
-void ComputeVertexInterpolation(float3 lb, float3 ub, float t, out float3 vOutWS, out float3 normal)
+void ComputeVertexInterpolation(float3 lb, float3 ub, float t, out float3 vOutWS, out float3 outNormal, out float3 outTan)
 {
-	float3 ub_vWS, ub_normal, lb_vWS, lb_normal;
-	WormModifier(ub, ub_vWS, ub_normal);
-	WormModifier(lb, lb_vWS, lb_normal);
-	vOutWS = lerp(lb_vWS, ub_vWS, t);
-	normal = lerp(lb_normal, ub_normal, t);
+	float3 vWS = lerp(lb, ub, t);
+	WormModifier(vWS, vOutWS);
+
+	float delta = _debug;
+	float3 vzWS = float3(vWS.xy, vWS.z + delta);
+	float3 vxWS = float3(vWS.x + delta, vWS.yz);
+	
+	float3 vzOutWS, vxOutWS;
+	WormModifier(vzWS, vzOutWS);
+	WormModifier(vxWS, vxOutWS);
+	
+	float3 x = normalize(vxOutWS - vOutWS);
+	float3 z = normalize(vzOutWS - vOutWS);
+
+	outNormal = /*float3(0, 1, 0); // */ cross(x, z);
+	outTan = /*float3(0, 0, 1); //*/ z;
+	
+	//outNormal = float3(0, 1, 0);
+	//outTan = float3(0, 0, 1);
 }
 
-void HeightModifier_float(float3 vOS, out float3 vOutOS)
+void HeightModifier_float(		float3 vOS,			float3 normalOS,		float3 tangentOS,
+							out float3 vOutOS, out	float3 normalOutOS, out float3 tangentOutOS)
 {
 	float height = 0.0;
 #if UNITY_ANY_INSTANCING_ENABLED
@@ -128,6 +132,8 @@ void HeightModifier_float(float3 vOS, out float3 vOutOS)
 
 	float3 vWS = mul(unity_ObjectToWorld, float4(vOS, 1)).xyz;
 	float3 vOutWS = float3(0, 0, 0);
+	float3 normalWS;
+	float3 tangentWS;
 	//if (unity_InstanceID == 7 || unity_InstanceID == 10)
 	{
 		int dn_left = (data.depthInfo >> 6 * 0) & 0x0000003f;
@@ -174,13 +180,16 @@ void HeightModifier_float(float3 vOS, out float3 vOutOS)
 			lb_vWS = vWS;
 			t = 1.0;
 		}		
-		float3 normal;
-		ComputeVertexInterpolation(lb_vWS, ub_vWS, t, vOutWS, normal);
+		ComputeVertexInterpolation(lb_vWS, ub_vWS, t, vOutWS, normalWS, tangentWS);
 		//vOutWS += normal * ClassicNoise(vOutWS * _heightHScale) * _heightVScale;
 	}	
 	vOutOS = mul(unity_WorldToObject, float4(vOutWS, 1)).xyz;
+	normalOutOS = mul(unity_WorldToObject, float4(normalWS, 0)).xyz;
+	tangentOutOS = mul(unity_WorldToObject, float4(tangentWS, 0)).xyz;
 #else
 	vOutOS = vOS;
+	normalOutOS = normalOS;
+	tangentOutOS = tangentOS;
 #endif
 }
 
