@@ -74,7 +74,7 @@ void WormModifier(float3 vWS, out float3 vOutWS)
 
 	float zt = vWS.z / _height;
 	//float2 s2 = vWS.yz * 1.00001;
-	float radius = lerp(_minRadius, _maxRadius, ClassicNoise(vOutWS * _radiusHScale));
+	//float radius = lerp(_minRadius, _maxRadius, ClassicNoise(vOutWS * _radiusHScale));
 
 
 	float angle = (vWS.x / _width) * 2 * PI; // (5 + vOS.x) * 0.1 * PI * 0.5;
@@ -83,10 +83,10 @@ void WormModifier(float3 vWS, out float3 vOutWS)
 	float4 q = fromToRotation(float3(0, 0, 1), tan);
 	float3 pOnCircleDir = rotateWithQuaternion(float3(cos(angle), sin(angle), 0), q);
     //vOutWS = float3(vWS.x, pOnPath.y, vWS.z); // + pOnCircle;
-	vOutWS = pOnPath + pOnCircleDir * radius;
+	vOutWS = pOnPath + pOnCircleDir * _minRadius;
 	if (_perlin)
 	{
-		vOutWS = pOnPath + pOnCircleDir * ClassicNoise(vOutWS * _heightHScale) * _heightVScale + pOnCircleDir * radius;
+		vOutWS = pOnPath + pOnCircleDir * ClassicNoise(vOutWS * _heightHScale) * _heightVScale + pOnCircleDir * _minRadius;
 	}
 }
 
@@ -101,22 +101,20 @@ void ComputeSeamParameter(int d, int dn, float xz, out float lb, out float ub, o
 
 void ComputeVertexInterpolation(float3 lb, float3 ub, float t, out float3 vOutWS, out float3 outNormal, out float3 outTan)
 {
-	float3 vWS = lerp(lb, ub, t);
-	WormModifier(vWS, vOutWS);
-
-	float delta = _debug;
-	float3 vzWS = float3(vWS.xy, vWS.z + delta);
-	float3 vxWS = float3(vWS.x + delta, vWS.yz);
+	float3 ub_vWS, ub_normal, lb_vWS, lb_normal;
+	WormModifier(ub, ub_vWS);
+	WormModifier(lb, lb_vWS);
+	vOutWS = lerp(lb_vWS, ub_vWS, t);
 	
-	float3 vzOutWS, vxOutWS;
-	WormModifier(vzWS, vzOutWS);
-	WormModifier(vxWS, vxOutWS);
+	//float3 vzOutWS, vxOutWS;
+	//WormModifier(vzWS, vzOutWS);
+	//WormModifier(vxWS, vxOutWS);
 	
-	float3 x = normalize(vxOutWS - vOutWS);
-	float3 z = normalize(vzOutWS - vOutWS);
+	//float3 x = normalize(vxOutWS - vOutWS);
+	//float3 z = normalize(vzOutWS - vOutWS);
 
-	outNormal = /*float3(0, 1, 0); // */ cross(x, z);
-	outTan = /*float3(0, 0, 1); //*/ z;
+	outNormal = float3(0, 1, 0); //  cross(x, z);
+	outTan = float3(0, 0, 1); // z;
 	
 	//outNormal = float3(0, 1, 0);
 	//outTan = float3(0, 0, 1);
