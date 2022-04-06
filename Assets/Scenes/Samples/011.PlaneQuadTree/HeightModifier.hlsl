@@ -106,18 +106,22 @@ void ComputeVertexInterpolation(float3 lb, float3 ub, float t, out float3 vOutWS
 	WormModifier(lb, lb_vWS);
 	vOutWS = lerp(lb_vWS, ub_vWS, t);
 	
+	//float3 vWS = lerp(lb, ub, t);
+	//float delta = _debug;
+	//float3 vzWS = float3(vWS.xy, vWS.z + delta);
+	//float3 vxWS = float3(vWS.x + delta, vWS.yz);
 	//float3 vzOutWS, vxOutWS;
 	//WormModifier(vzWS, vzOutWS);
 	//WormModifier(vxWS, vxOutWS);
 	
-	//float3 x = normalize(vxOutWS - vOutWS);
-	//float3 z = normalize(vzOutWS - vOutWS);
+	//float3 x = vxOutWS - vOutWS;
+	//float3 z = vzOutWS - vOutWS;
 
-	outNormal = float3(0, 1, 0); //  cross(x, z);
-	outTan = float3(0, 0, 1); // z;
-	
-	//outNormal = float3(0, 1, 0);
-	//outTan = float3(0, 0, 1);
+	//outNormal = normalize(cross(z, x));
+	//outTan = z;
+
+	outNormal = float3(0, 1, 0); 
+	outTan = float3(0, 0, 1);
 }
 
 void HeightModifier_float(		float3 vOS,			float3 normalOS,		float3 tangentOS,
@@ -179,6 +183,20 @@ void HeightModifier_float(		float3 vOS,			float3 normalOS,		float3 tangentOS,
 			t = 1.0;
 		}		
 		ComputeVertexInterpolation(lb_vWS, ub_vWS, t, vOutWS, normalWS, tangentWS);
+
+		//float3 vWS = lerp(lb, ub, t);
+		float delta = _debug;
+		float3 vzWS = float3(vWS.xy, vWS.z + delta);
+		float3 vxWS = float3(vWS.x + delta, vWS.yz);
+		float3 vzOutWS, vxOutWS;
+		WormModifier(vzWS, vzOutWS);
+		WormModifier(vxWS, vxOutWS);
+	
+		float3 x = vxOutWS - vOutWS;
+		float3 z = vzOutWS - vOutWS;
+
+		normalWS = normalize(cross(z, x));
+		tangentWS = normalize(z);
 		//vOutWS += normal * ClassicNoise(vOutWS * _heightHScale) * _heightVScale;
 	}	
 	vOutOS = mul(unity_WorldToObject, float4(vOutWS, 1)).xyz;
