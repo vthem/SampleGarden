@@ -200,7 +200,10 @@ void HeightModifier_float(		float3 vOS,			float3 normalOS,		float3 tangentOS,
 		//vOutWS += normal * ClassicNoise(vOutWS * _heightHScale) * _heightVScale;
 	}	
 	vOutOS = mul(unity_WorldToObject, float4(vOutWS, 1)).xyz;
-	normalOutOS = mul(unity_WorldToObject, float4(normalWS, 0)).xyz;
+	normalOutOS = normalWS; // normal should be rotated and not scaled
+							// unity_WorldToObject is a transformation that contains scale
+							// the plane on the quadtree are not rotated. So the normal is the
+							// same in WS and OS
 	tangentOutOS = mul(unity_WorldToObject, float4(tangentWS, 0)).xyz;
 #else
 	vOutOS = vOS;
