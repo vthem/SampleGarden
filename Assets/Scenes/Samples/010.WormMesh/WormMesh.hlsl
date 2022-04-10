@@ -55,7 +55,7 @@ float3 GetInterpolatedValue(float4 arr[ARRAY_SIZE], int count, float zWS)
 	int index = int(floor(zWS));
 	index = min(index, count - 1);
 	float dec = zWS - index;
-	return lerp(arr[index], arr[index + 1], dec);
+	return lerp(arr[index], arr[index + 1], dec).xyz;
 }
 
 float3 GetPosition(float zWS)
