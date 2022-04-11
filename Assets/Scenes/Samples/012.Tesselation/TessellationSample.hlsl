@@ -421,21 +421,21 @@ Interpolators Domain(
     float2 uv = BARYCENTRIC_INTERPOLATE(uv); // Interpolate UV
     // Sample the height map and offset position along the normal vector accordingly
     //float height = SAMPLE_TEXTURE2D_LOD(_HeightMap, sampler_HeightMap, uv, 0).r * _HeightMapAltitude;
-    //float delta = 0.1;
-    //float3 v0 = positionWS;
-    //float3 _vx = v0 + tangentWS * delta;
-    //float3 _vz = v0 + bitangentWS * delta;
+    float delta = 0.00001;
+    float3 v0 = positionWS;
+    float3 _vx = v0 + tangentWS * delta;
+    float3 _vz = v0 + bitangentWS * delta;
 
     float height = ClassicNoise(positionWS);
     positionWS += normalWS * height;
 
-    //_vx += normalWS * ClassicNoise(_vx);
-    //_vz += normalWS * ClassicNoise(_vz);
+    _vx += normalWS * ClassicNoise(_vx);
+    _vz += normalWS * ClassicNoise(_vz);
 
     output.uv = uv;
     output.positionCS = TransformWorldToHClip(positionWS);
-    //output.normalWS = -normalize(cross(_vz - v0, _vx - v0));
-    output.normalWS = normalWS;
+    output.normalWS = -normalize(cross(_vz - positionWS, _vx - positionWS));
+    //output.normalWS = normalWS;
     //output.normalWS = float3(0, 1, 0);
     output.positionWS = positionWS;
     output.tangentWS = float4(tangentWS, patch[0].tangentWS.w);
@@ -504,7 +504,7 @@ float4 Fragment(Interpolators input) : SV_Target {
 
     SurfaceData surface = (SurfaceData)0; // Found in URP/SurfaceData.hlsl
     surface.albedo = mainSample.rgb;
-    surface.albedo = normalWS.rgb;
+    //surface.albedo = normalWS.rgb;
     surface.alpha = mainSample.a;
     surface.metallic = 0;
     surface.smoothness = 0.5;
