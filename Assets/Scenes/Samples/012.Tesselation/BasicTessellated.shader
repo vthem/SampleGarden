@@ -50,7 +50,7 @@ Shader "Example/URPUnlitShaderTessallated"
 
 
 
-		sampler2D _Noise;
+	sampler2D _Noise;
 	float _Weight;
 
 	// pre tesselation vertex program
@@ -91,8 +91,10 @@ Shader "Example/URPUnlitShaderTessallated"
 		vx = ModifyVertex(vx);
 	
 		//output.normal = input.normal;
-		output.normal = normalize(cross(vz - vm, vx - vm));
+		//output.normal = normalize(cross(vz - vm, vx - vm));
 		output.color = float4(output.normal, 1);
+		float c = vm.y / _Weight;
+		//output.color = float4(c, c, c, 1);
 		//output.color = float4(1, 0, 0, 1);
 		output.uv = input.uv;
 		return output;
@@ -119,7 +121,7 @@ Shader "Example/URPUnlitShaderTessallated"
 	// The fragment shader definition.            
 	half4 frag(Varyings IN) : SV_Target
 	{
-		//half4 tex = tex2D(_Noise, IN.uv); return tex;
+		half4 tex = tex2D(_Noise, IN.uv); return tex;
 
 		return IN.color;
 	}
