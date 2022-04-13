@@ -1,4 +1,8 @@
-﻿using UnityEngine;
+﻿#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
+using UnityEngine;
 
 public static class Utils
 {
@@ -66,4 +70,24 @@ public static class UnityExt
         }
         return comp;
     }
+
+	public static void SafeDestroy(this Object obj)
+	{
+		if (!obj)
+		{
+			return;
+		}
+#if UNITY_EDITOR
+		if (EditorApplication.isPlaying)
+		{
+			Object.Destroy(obj);
+		}
+		else
+		{
+			Object.DestroyImmediate(obj);
+		}
+#else
+		Object.Destroy(obj);
+#endif
+	}
 }
