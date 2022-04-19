@@ -49,7 +49,7 @@ float _Length;
 
 float3 GetPosition(float zWS)
 {
-    float t = zWS / (_Length-1);
+    float t = zWS / (_Length);
     float fIndex = lerp(0, _ArrayCount - 1, t);
     int index = floor(fIndex);
     if (index >= _ArrayCount - 1)
