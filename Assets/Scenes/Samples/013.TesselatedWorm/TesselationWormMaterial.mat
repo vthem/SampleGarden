@@ -141,7 +141,7 @@ Material:
     - _TESSELLATION_SMOOTHING: 0
     - _Tess: 20
     - _TessellationBias: 0
-    - _TessellationFactor: 7.9
+    - _TessellationFactor: 79.79
     - _TessellationFactorVColors: 0
     - _TessellationSmoothing: 0
     - _TessellationSmoothingVColors: 0

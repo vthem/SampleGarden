@@ -1,14 +1,32 @@
 // Each #kernel tells which function to compile; you can have many kernels
 #pragma kernel CSMain
 
-// Create a RenderTexture with enableRandomWrite flag and set it
-// with cs.SetTexture
-RWTexture2D<float4> Result;
+#include "Packages/jp.keijiro.noiseshader/Shader/ClassicNoise2D.hlsl"
 
-[numthreads(8,8,1)]
-void CSMain (uint3 id : SV_DispatchThreadID)
+struct WormData
 {
-    // TODO: insert actual code here!
+    float xDeviation;
+    float yDeviation;
+    float radius;
+};
 
-    Result[id.xy] = float4(id.x & id.y, (id.x & 15)/15.0, (id.y & 15)/15.0, 0.0);
+RWStructuredBuffer<WormData> _wormData;
+
+int _seed;
+float _xyPeriodScale;
+float _yScale;
+float _zWorld;
+
+[numthreads(16,16,1)]
+void CSMain (uint id : SV_GroupIndex)
+{
+    float xSeed = (_seed ^ 135823) * 0.12987;
+    float ySeed = (_seed ^ 246973) * 0.49874;
+    float rSeed = (_seed ^ 394398) * 0.23987;
+    float2 x = float2((_zWorld + id) * _xyPeriodScale, xSeed);
+    float2 y = float2((_zWorld + id) * _xyPeriodScale, ySeed);
+    float2 r = float2((_zWorld + id) * _xyPeriodScale, rSeed);
+    _wormData[id].xDeviation = ClassicNoise(x);
+    _wormData[id].yDeviation = ClassicNoise(y);
+    _wormData[id].radius = ClassicNoise(r);
 }
