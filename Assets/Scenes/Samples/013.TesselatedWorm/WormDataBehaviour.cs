@@ -33,11 +33,11 @@ namespace _013_TesselatedWorm
 			float fIndex = Mathf.Lerp(0, lastIndex, t);
 			int index = Mathf.FloorToInt(fIndex);
 			if (index >= lastIndex)
-				return new Vector3(wormData[index].xDeviation, wormData[index].yDeviation, index * stepLength);
+				return new Vector3(wormData[index].xDeviation, wormData[index].yDeviation, t * length);
 			float dec = fIndex - index;
-			Vector3 v1 = new Vector3(wormData[index].xDeviation, wormData[index].yDeviation, index * stepLength); ;
-			Vector3 v2 = new Vector3(wormData[index + 1].xDeviation, wormData[index + 1].yDeviation, (index + 1) * stepLength); ;
-			return Vector3.Lerp(v1, v2, dec);
+			float x = Mathf.Lerp(wormData[index].xDeviation, wormData[index + 1].xDeviation, dec);
+			float y = Mathf.Lerp(wormData[index].yDeviation, wormData[index + 1].yDeviation, dec);
+			return new Vector3(x, y, t * length);
 		}
 
 		private struct WormData
@@ -52,23 +52,25 @@ namespace _013_TesselatedWorm
 			}
 		}
 
-
-		// Start is called before the first frame update
-		private void OnEnable()
-		{
-			indexOfKernel = computeShader.FindKernel("CSMain");
-			wormData = new WormData[Mathf.FloorToInt(length / stepLength)];
-			for (int i = 0; i < wormData.Length; ++i)
-			{
-				wormData[i] = new WormData();
-			}
-		}
-
 		// Update is called once per frame
 		void Update()
 		{
 			if (indexOfKernel < 0)
-				return;
+			{
+				indexOfKernel = computeShader.FindKernel("CSMain");
+			}
+
+			stepLength = Mathf.Max(0.001f, stepLength);
+
+			int sampleCount = Mathf.FloorToInt(length / stepLength);
+			if (wormData == null || wormData.Length != sampleCount)
+			{
+				wormData = new WormData[sampleCount];
+				for (int i = 0; i < wormData.Length; ++i)
+				{
+					wormData[i] = new WormData();
+				}
+			}
 
 			if (null == computeBuffer || computeBuffer.count != wormData.Length)
 			{
