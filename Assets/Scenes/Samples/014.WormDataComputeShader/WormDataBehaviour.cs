@@ -19,9 +19,6 @@ namespace _013_TesselatedWorm
 
 		public ComputeShader computeShader;
 
-		[Range(10, 1000)]
-		public int gizmoPointCount = 1000;
-
 		private ComputeBuffer computeBuffer;
 		private int indexOfKernel = -1;
 		private int Count => wormData.Length;
@@ -52,6 +49,8 @@ namespace _013_TesselatedWorm
 			}
 		}
 
+		int sampleCount = 32 * 32;
+
 		// Update is called once per frame
 		void Update()
 		{
@@ -62,7 +61,7 @@ namespace _013_TesselatedWorm
 
 			stepLength = Mathf.Max(0.001f, stepLength);
 
-			int sampleCount = Mathf.FloorToInt(length / stepLength);
+			
 			if (wormData == null || wormData.Length != sampleCount)
 			{
 				wormData = new WormData[sampleCount];
@@ -85,7 +84,7 @@ namespace _013_TesselatedWorm
 			computeShader.SetInt("_seed", seed);
 			computeShader.SetFloat("_xyPeriodScale", xyPeriodScale);
 			computeShader.SetFloat("_zWorld", zWorld);
-			computeShader.Dispatch(indexOfKernel, 16, 16, 1);
+			computeShader.Dispatch(indexOfKernel, 32, 32, 1);
 			computeBuffer.GetData(wormData);
 		}
 
@@ -113,7 +112,9 @@ namespace _013_TesselatedWorm
 				}
 			}
 
-			for (int i = 0; i < gizmoPointCount; ++i)
+			int sCount = Mathf.FloorToInt(length / stepLength);
+			sCount = Mathf.Min(sampleCount, sCount);
+			for (int i = 0; i < sCount; ++i)
 			{
 
 				//			{
@@ -121,7 +122,7 @@ namespace _013_TesselatedWorm
 				//Gizmos.DrawLine(GetPosition(i - 1), GetPosition(i));
 				//Vector3 forward = GetForward(i);
 				//Vector3 up = GetUp(i);
-				GizmoDrawCircle(Vector3.forward, Vector3.up, GetPosition(i / (float)(gizmoPointCount - 1)), 1, 16);
+				GizmoDrawCircle(Vector3.forward, Vector3.up, GetPosition(i / (float)(sCount - 1)), 1, 16);
 			}
 		}
 	}

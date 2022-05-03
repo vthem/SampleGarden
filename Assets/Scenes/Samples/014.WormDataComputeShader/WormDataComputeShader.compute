@@ -17,7 +17,7 @@ float _xyPeriodScale;
 float _yScale;
 float _zWorld;
 
-[numthreads(16,16,1)]
+[numthreads(32,32,1)]
 void CSMain (uint id : SV_GroupIndex)
 {
     float xSeed = (_seed ^ 135823) * 0.12987;
