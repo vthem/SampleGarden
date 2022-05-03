@@ -271,7 +271,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   zWorld: 0
   seed: 25
-  xyPeriodScale: 0.88
+  xyPeriodScale: 0.97
   length: 14.71
   stepLength: 1
   computeShader: {fileID: 7200000, guid: b8c360fda33aa404eaabf31514469810, type: 3}

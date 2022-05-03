@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 using UnityEngine;
 
-namespace _013_TesselatedWorm
+namespace _014_WormDataComputeShader
 {
 	// https://medium.com/@simonalbou/lusage-de-compute-shaders-sur-unity-un-gain-de-performance-violent-54c1b0f72698
 
@@ -100,6 +100,9 @@ namespace _013_TesselatedWorm
 
 		private void OnDrawGizmos()
 		{
+			if (wormData == null)
+				return;
+
 			void GizmoDrawCircle(Vector3 forward, Vector3 up, Vector3 position, float radius, int segmentCount)
 			{
 				Vector3 prev = Vector3.Cross(forward, up);
