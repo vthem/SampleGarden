@@ -159,9 +159,17 @@ public class PerlinWorm
 		return new Vector3(x, y, zLocal);
 	}
 
-	private static float Perlin(float t)
+	protected virtual float Perlin(float t)
 	{
 		return (Mathf.PerlinNoise(0f, t) * 2) - 1f;
 	}
 	#endregion
+}
+
+public class FastPerlinWorm : PerlinWorm
+{
+	protected override float Perlin(float t)
+	{
+		return base.Perlin(t);
+	}
 }
