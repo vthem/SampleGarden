@@ -49,13 +49,13 @@ Material:
     - _BackFaceCullTolerance: 0.01
     - _FrustumCullTolerance: 0.01
     - _GENERATE_NORMALS: 1
-    - _HeightMapAltitude: 0.1
-    - _NormalStrength: 0.01
+    - _HeightMapAltitude: 0
+    - _NormalStrength: 0
     - _PARTITIONING: 0
     - _TESSELLATION_FACTOR: 0
     - _TESSELLATION_SMOOTHING: 0
     - _TessellationBias: 0
-    - _TessellationFactor: 111.2
+    - _TessellationFactor: 0
     - _TessellationFactorVColors: 0
     - _TessellationSmoothing: 0.75
     - _TessellationSmoothingVColors: 0
