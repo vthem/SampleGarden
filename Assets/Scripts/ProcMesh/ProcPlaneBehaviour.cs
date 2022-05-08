@@ -102,12 +102,22 @@ public class ProcPlaneBehaviour : MonoBehaviour
 
         if (null == vertexModifier)
         {
-            if (!customVertexModifier)
-                customVertexModifier = ScriptableObject.CreateInstance<VertexModifierScriptableObject>(); ;
-            vertexModifier = customVertexModifier;
+			
+			var localVm = GetComponent<IVertexModifier>();
+			if (localVm != null)
+			{
+				Debug.Log("get vm from gameobject");
+				vertexModifier = localVm;
+			}
         }
+		if (null == vertexModifier)
+		{
+			if (!customVertexModifier)
+				customVertexModifier = ScriptableObject.CreateInstance<VertexModifierScriptableObject>(); ;
+			vertexModifier = customVertexModifier;
+		}
 
-        material.SetMatrix("_ObjToParent", objToParent);
+		material.SetMatrix("_ObjToParent", objToParent);
         if (!IsMeshInfoValid() || forceRebuild || (vertexModifier.HasChanged) || forceRebuildOnce)
         {
             forceRebuildOnce = false;
