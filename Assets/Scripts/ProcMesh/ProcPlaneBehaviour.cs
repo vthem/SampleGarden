@@ -56,8 +56,7 @@ public class ProcPlaneBehaviour : MonoBehaviour
         procPlane.lodInfo = createParams.lodInfo;
         procPlane.vertexModifier = createParams.vertexModifier;
 		procPlane.recalculateNormals = createParams.recalculateNormals;
-        var customVertexModifier = createParams.vertexModifier as VertexModifierScriptableObject;
-        procPlane.customVertexModifier = customVertexModifier;
+        procPlane.vertexModifier = createParams.vertexModifier;
 
         meshRenderer.sharedMaterial = Resources.Load(createParams.materialName) as Material;
         return procPlane;
@@ -80,9 +79,6 @@ public class ProcPlaneBehaviour : MonoBehaviour
 
     [SerializeField]
     private bool forceRebuild = false;
-
-    [SerializeField]
-    private VertexModifierScriptableObject customVertexModifier;
 
     private IVertexModifier vertexModifier;
     private MeshGenerateParameter meshGenerateParameter;
@@ -134,7 +130,7 @@ public class ProcPlaneBehaviour : MonoBehaviour
                 SysStopwatch sw = SysStopwatch.StartNew();
 				ProceduralPlaneMesh.Generate(meshGenerateParameter);
                 benchElaspedMilliseconds += sw.ElapsedMilliseconds;
-                benchTotalVerticesProcessed += customVertexModifier.VertexCount2D;
+                //benchTotalVerticesProcessed += customVertexModifier.VertexCount2D;
             }
             else
             {

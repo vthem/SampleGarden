@@ -10,33 +10,43 @@ namespace _016_TerraGenCPU
 		[Range(0.01f, 1f)] public float normalizedProcPlaneSize = .5f;
 
 		private ProcPlaneBehaviour[] planes = new ProcPlaneBehaviour[0];
-		// Start is called before the first frame update
-		void Start()
-		{
 
-		}
-
-		// Update is called once per frame
 		void Update()
 		{
 			int countX = Mathf.FloorToInt(transform.localScale.x / normalizedProcPlaneSize);
-			int countY = Mathf.FloorToInt(transform.localScale.y / normalizedProcPlaneSize);
-			int count = countX * countY;
+			int countZ = Mathf.FloorToInt(transform.localScale.z / normalizedProcPlaneSize);
+			int count = countX * countZ;
+			if (transform.childCount > 0 && transform.childCount != count)
+			{
+				Transform[] childs = new Transform[transform.childCount];
+				for (int i= 0; i < transform.childCount; ++i)
+				{
+					childs[i] = transform.GetChild(i);
+				}
+				for (int i = 0; i < transform.childCount; ++i)
+				{
+					childs[i].gameObject.SafeDestroy();
+				}
+				planes = new ProcPlaneBehaviour[0];
+				return;
+			}
 			if (planes.Length != count)
 			{
+				
 				for (int i = 0; i < planes.Length; ++i)
 				{
 					planes[i].SafeDestroy();
 				}
 				planes = new ProcPlaneBehaviour[count];
-				for (int i = 0; i < planes.Length; ++i)
+				for (int i = 0; i < count; ++i)
 				{
 					ProcPlaneCreateParameters createParams = default;
 					createParams.materialName = "White";
 					createParams.name = $"plane[{i}]";
-					createParams.parent = transform.parent;
-
-					ProcPlaneBehaviour.Create(createParams);
+					createParams.parent = transform;
+					ProcPlaneBehaviour procPlane = ProcPlaneBehaviour.Create(createParams);
+					IVertexModifier vm = procPlane.gameObject.AddComponent<WorldPerlinVertexModifierBehaviour>();
+					procPlane.VertexModifier = vm;					
 				}
 			}
 		}
