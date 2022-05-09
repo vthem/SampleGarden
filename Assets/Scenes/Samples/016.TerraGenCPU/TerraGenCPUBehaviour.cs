@@ -20,6 +20,25 @@ namespace _016_TerraGenCPU
 		void Update()
 		{
 			int countX = Mathf.FloorToInt(transform.localScale.x / normalizedProcPlaneSize);
+			int countY = Mathf.FloorToInt(transform.localScale.y / normalizedProcPlaneSize);
+			int count = countX * countY;
+			if (planes.Length != count)
+			{
+				for (int i = 0; i < planes.Length; ++i)
+				{
+					planes[i].SafeDestroy();
+				}
+				planes = new ProcPlaneBehaviour[count];
+				for (int i = 0; i < planes.Length; ++i)
+				{
+					ProcPlaneCreateParameters createParams = default;
+					createParams.materialName = "White";
+					createParams.name = $"plane[{i}]";
+					createParams.parent = transform.parent;
+
+					ProcPlaneBehaviour.Create(createParams);
+				}
+			}
 		}
 	}
 }
