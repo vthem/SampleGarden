@@ -101,8 +101,7 @@ public class ProcPlaneBehaviour : MonoBehaviour
             material = GetComponent<MeshRenderer>().sharedMaterial;
 
         if (null == vertexModifier)
-        {
-			
+        {			
 			var localVm = GetComponent<IVertexModifier>();
 			if (localVm != null)
 			{
@@ -112,9 +111,10 @@ public class ProcPlaneBehaviour : MonoBehaviour
         }
 		if (null == vertexModifier)
 		{
-			if (!customVertexModifier)
-				customVertexModifier = ScriptableObject.CreateInstance<VertexModifierScriptableObject>(); ;
-			vertexModifier = customVertexModifier;
+			return;
+			//if (!customVertexModifier)
+			//	customVertexModifier = ScriptableObject.CreateInstance<VertexModifierScriptableObject>(); ;
+			//vertexModifier = customVertexModifier;
 		}
 
 		material.SetMatrix("_ObjToParent", objToParent);
