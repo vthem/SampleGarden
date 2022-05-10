@@ -9,7 +9,7 @@ namespace _016_TerraGenCPU
 	{
 		[Range(0.01f, 1f)] public float normalizedProcPlaneSize = .5f;
 
-		private ProcPlaneBehaviour[] planes = new ProcPlaneBehaviour[0];
+		[SerializeField] private Transform container;
 
 		void Update()
 		{
@@ -27,17 +27,10 @@ namespace _016_TerraGenCPU
 				{
 					childs[i].gameObject.SafeDestroy();
 				}
-				planes = new ProcPlaneBehaviour[0];
 				return;
 			}
-			if (planes.Length != count)
+			if (transform.childCount != count)
 			{
-				
-				for (int i = 0; i < planes.Length; ++i)
-				{
-					planes[i].SafeDestroy();
-				}
-				planes = new ProcPlaneBehaviour[count];
 				for (int i = 0; i < count; ++i)
 				{
 					ProcPlaneCreateParameters createParams = default;
@@ -46,8 +39,52 @@ namespace _016_TerraGenCPU
 					createParams.parent = transform;
 					ProcPlaneBehaviour procPlane = ProcPlaneBehaviour.Create(createParams);
 					IVertexModifier vm = procPlane.gameObject.AddComponent<WorldPerlinVertexModifierBehaviour>();
-					procPlane.VertexModifier = vm;					
+					procPlane.VertexModifier = vm;
+
+					Vector2Int posXY = Utils.GetXYFromIndex(i, countX);
+					procPlane.transform.localPosition = new Vector3(posXY.x, 0, posXY.y);
 				}
+			}
+		}
+
+		void CreateContainer()
+		{
+			if (container)
+				return;
+
+			var obj = new GameObject();
+			container = obj.transform;
+			container.SetParent(transform);
+			container.localPosition = Vector3.zero;
+		}
+
+		void DestroyContainer()
+		{
+			if (!container)
+				return;
+
+			container.SafeDestroy();
+		}
+
+		void Populate()
+		{
+			CreateContainer();
+
+			int countX = Mathf.FloorToInt(transform.localScale.x / normalizedProcPlaneSize);
+			int countZ = Mathf.FloorToInt(transform.localScale.z / normalizedProcPlaneSize);
+			int count = countX * countZ;
+			for (int i = 0; i < count; ++i)
+			{
+				ProcPlaneCreateParameters createParams = default;
+				createParams.materialName = "White";
+				createParams.name = $"plane[{i}]";
+				createParams.parent = transform;
+				ProcPlaneBehaviour procPlane = ProcPlaneBehaviour.Create(createParams);
+				IVertexModifier vm = procPlane.gameObject.AddComponent<WorldPerlinVertexModifierBehaviour>();
+				procPlane.VertexModifier = vm;
+
+				Vector2Int posXY = Utils.GetXYFromIndex(i, countX);
+				procPlane.transform.localPosition = new Vector3(posXY.x, 0, posXY.y);
 			}
 		}
 	}
