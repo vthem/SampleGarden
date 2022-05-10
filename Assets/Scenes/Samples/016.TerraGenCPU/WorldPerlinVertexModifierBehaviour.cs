@@ -6,6 +6,8 @@ namespace _016_TerraGenCPU
 	[ExecuteInEditMode]
 	public class WorldPerlinVertexModifierBehaviour : VertexModifierBehaviourBase
 	{
+		public Vector3 perlinOffset = new Vector3(0.232f, 0.329879f, 0.2398732f);
+
 		public override bool Initialize()
 		{
 			if (!base.Initialize())
@@ -22,7 +24,7 @@ namespace _016_TerraGenCPU
 			float zVal = zStart + z * zDelta;
 			//var v = perlinMatrix.MultiplyPoint(new Vector3(xVal, 0, zVal));
 			var v = transform.TransformPoint(new Vector3(xVal, 0, zVal));
-			return new Vector3(xVal, Mathf.PerlinNoise(v.x , v.z), zVal);
+			return new Vector3(xVal, Mathf.PerlinNoise(v.x, v.z), zVal);
 		}
 
 		//public float PerlinScale { get => perlinScale; set => perlinScale = value; }
