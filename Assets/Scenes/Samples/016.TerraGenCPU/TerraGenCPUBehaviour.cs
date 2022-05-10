@@ -1,6 +1,13 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using _016_TerraGenCPU;
+using System.Drawing;
+using UnityEditor.PackageManager.UI;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace _016_TerraGenCPU
 {
@@ -11,6 +18,10 @@ namespace _016_TerraGenCPU
 		public Vector2 size = Vector2.one;
 
 		[Range(0, 7)] public int lod = 0;
+
+		public AnimationCurve lodVsDistance;
+
+		public Vector3 highTarget = Vector3.zero;
 
 		private float NormalizedProcPlaneSize => 1 / (float)PlaneCount;
 
@@ -104,3 +115,29 @@ namespace _016_TerraGenCPU
 		}
 	}
 }
+
+#if UNITY_EDITOR
+// A tiny custom editor for ExampleScript component
+[CustomEditor(typeof(TerraGenCPUBehaviour))]
+public class ExampleEditor : Editor
+{
+	// Custom in-scene UI for when ExampleScript
+	// component is selected.
+	public void OnSceneGUI()
+	{
+		TerraGenCPUBehaviour terraGen = target as TerraGenCPUBehaviour;
+
+		float size = HandleUtility.GetHandleSize(terraGen.highTarget) * 0.5f;
+		Vector3 snap = Vector3.one * 0.5f;
+
+		EditorGUI.BeginChangeCheck();
+		Vector3 newTargetPosition = Handles.FreeMoveHandle(terraGen.highTarget, terraGen.transform.rotation, size, snap, Handles.DotHandleCap);
+		newTargetPosition.y = 0f;
+		if (EditorGUI.EndChangeCheck())
+		{
+			Undo.RecordObject(terraGen, "Change Look At Target Position");
+			terraGen.highTarget = newTargetPosition;
+		}
+	}
+}
+#endif
