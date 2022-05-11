@@ -17,11 +17,12 @@ namespace _016_TerraGenCPU
 		[Range(1, 100)] public int PlaneCount = 1;
 		public Vector2 size = Vector2.one;
 
-		[Range(0, 7)] public int lod = 0;
+		[Range(0, 7)] public int maxLOD = 0;
+		public Vector3 perlinOffset;
 
 		public AnimationCurve lodVsDistance;
 
-		public Vector3 highTarget = Vector3.zero;
+		public Vector3 maxLODPosition = Vector3.zero;
 
 		private float NormalizedProcPlaneSize => 1 / (float)PlaneCount;
 
@@ -29,6 +30,7 @@ namespace _016_TerraGenCPU
 
 		private bool destroyOnNextUpdate = false;
 		private Vector3 lastPosition = Vector3.zero;
+		private ProcPlaneBehaviour[] procPlaneArray = new ProcPlaneBehaviour[0];
 
 		void Update()
 		{
@@ -48,6 +50,8 @@ namespace _016_TerraGenCPU
 				DestroyContainer();
 				Populate();
 			}
+
+			UpdateMeshes();
 
 			lastPosition = transform.position;
 		}
@@ -72,6 +76,12 @@ namespace _016_TerraGenCPU
 			container = null;
 		}
 
+		struct BaseInfo
+		{
+			public Vector3 localPosition;
+			public int lod;
+		};
+
 		void Populate()
 		{
 			CreateContainer();
@@ -79,6 +89,29 @@ namespace _016_TerraGenCPU
 			int countX = Mathf.FloorToInt(size.x / NormalizedProcPlaneSize);
 			int countZ = Mathf.FloorToInt(size.y / NormalizedProcPlaneSize);
 			int count = countX * countZ;
+
+			BaseInfo[] baseInfoArray = new BaseInfo[count];
+			for (int i = 0; i < count; ++i)
+			{
+				Vector2Int posXY = Utils.GetXYFromIndex(i, countX);
+				float xSize = size.x / countX;
+				float zSize = size.y / countZ;
+
+				BaseInfo info = default;
+				Vector3 start = new Vector3(-size.x * 0.5f, 0, -size.y * 0.5f);
+				info.localPosition = start + (new Vector3(posXY.x * xSize, 0, posXY.y * zSize)) + (new Vector3(xSize, 0, zSize) * 0.5f);
+
+				float distance = (transform.TransformPoint(info.localPosition) - maxLODPosition).magnitude;
+				distance /= size.x; // normalize
+				distance = Mathf.Clamp01(distance);
+
+				float lodSample = lodVsDistance.Evaluate(distance);
+				lodSample = Mathf.Clamp01(lodSample);
+				info.lod = Mathf.RoundToInt(lodSample * maxLOD);
+				baseInfoArray[i] = info;
+			}
+
+			procPlaneArray = new ProcPlaneBehaviour[count]; // cache the proc plane
 			for (int i = 0; i < count; ++i)
 			{
 				Vector2Int posXY = Utils.GetXYFromIndex(i, countX);
@@ -95,12 +128,28 @@ namespace _016_TerraGenCPU
 				float zSize = size.y / countZ;
 				(vm as VertexModifierBehaviourBase).XSize = xSize;
 				(vm as VertexModifierBehaviourBase).ZSize = zSize;
-				(vm as VertexModifierBehaviourBase).Lod = lod;
+				(vm as VertexModifierBehaviourBase).Lod = baseInfoArray[i].lod;
+				(vm as WorldPerlinVertexModifierBehaviour).perlinOffset = perlinOffset;
 				procPlane.VertexModifier = vm;
 
-				Vector3 start = new Vector3(-size.x * 0.5f, 0, -size.y * 0.5f);
-				procPlane.transform.localPosition = start + (new Vector3(posXY.x * xSize, 0, posXY.y * zSize)) + (new Vector3(xSize, 0, zSize) * 0.5f);
+				procPlane.transform.localPosition = baseInfoArray[i].localPosition;
+
+				procPlaneArray[i] = procPlane;
 			}
+		}
+
+		void UpdateMeshes()
+		{
+			if (!container)
+				return;
+
+			// first pass, update the lod
+			for (int i = 0; i < procPlaneArray.Length; ++i)
+			{
+
+			}
+
+			// second pass: update the lod of the neighbor
 		}
 
 		[ContextMenu("Rebuild")]
@@ -127,16 +176,16 @@ public class ExampleEditor : Editor
 	{
 		TerraGenCPUBehaviour terraGen = target as TerraGenCPUBehaviour;
 
-		float size = HandleUtility.GetHandleSize(terraGen.highTarget) * 0.5f;
+		float size = HandleUtility.GetHandleSize(terraGen.maxLODPosition) * 0.5f;
 		Vector3 snap = Vector3.one * 0.5f;
 
 		EditorGUI.BeginChangeCheck();
-		Vector3 newTargetPosition = Handles.FreeMoveHandle(terraGen.highTarget, terraGen.transform.rotation, size, snap, Handles.DotHandleCap);
+		Vector3 newTargetPosition = Handles.FreeMoveHandle(terraGen.maxLODPosition, terraGen.transform.rotation, size, snap, Handles.DotHandleCap);
 		newTargetPosition.y = 0f;
 		if (EditorGUI.EndChangeCheck())
 		{
 			Undo.RecordObject(terraGen, "Change Look At Target Position");
-			terraGen.highTarget = newTargetPosition;
+			terraGen.maxLODPosition = newTargetPosition;
 		}
 	}
 }

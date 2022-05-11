@@ -112,17 +112,17 @@ public class ProcPlaneBehaviour : MonoBehaviour
 			//	customVertexModifier = ScriptableObject.CreateInstance<VertexModifierScriptableObject>(); ;
 			//vertexModifier = customVertexModifier;
 		}
-
-		material.SetMatrix("_ObjToParent", objToParent);
-        if (!IsMeshInfoValid() || forceRebuild || (vertexModifier.HasChanged) || forceRebuildOnce)
+		
+        if (!IsMeshInfoValid() || forceRebuild || (vertexModifier.RequireRebuild) || forceRebuildOnce)
         {
             forceRebuildOnce = false;
-            vertexModifier.HasChanged = false;
+            vertexModifier.RequireRebuild = false;
 
             ReleaseMeshInfo();
             AllocateMeshInfo();
 
             objToParent = Matrix4x4.TRS(transform.localPosition, Quaternion.identity, Vector3.one);
+			material.SetMatrix("_ObjToParent", objToParent);
 
 			meshGenerateParameter.recalculateNormals = recalculateNormals;
             if (benchEnable)
@@ -134,9 +134,18 @@ public class ProcPlaneBehaviour : MonoBehaviour
             }
             else
             {
-                ProceduralPlaneMesh.Generate(meshGenerateParameter);
+				ProceduralPlaneMesh.Generate(meshGenerateParameter);
             }
         }
+		if (vertexModifier.RequireUpdate)
+		{
+			vertexModifier.RequireUpdate = false;
+
+			objToParent = Matrix4x4.TRS(transform.localPosition, Quaternion.identity, Vector3.one);
+			material.SetMatrix("_ObjToParent", objToParent);
+			meshGenerateParameter.recalculateNormals = recalculateNormals;
+			ProceduralPlaneMesh.Generate(meshGenerateParameter);
+		}
     }
 
     private void OnGUI()

@@ -77,7 +77,7 @@ namespace _006_CylinderBezier
 					//procPlanes[i].GetVertexModifierAs<CylinderBezierVertexModifier>().ZSize = Mathf.Max(1, radius);
 					procPlanes[i].GetVertexModifierAs<CylinderBezierVertexModifier>().radius = radius;
 					procPlanes[i].GetVertexModifierAs<CylinderBezierVertexModifier>().segment = Segment;
-					procPlanes[i].GetVertexModifierAs<CylinderBezierVertexModifier>().HasChanged = true;
+					procPlanes[i].GetVertexModifierAs<CylinderBezierVertexModifier>().RequireRebuild = true;
 				}
 			}
 		}

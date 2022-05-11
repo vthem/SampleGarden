@@ -65,7 +65,7 @@ namespace _002_InfiniteLand
 				vm.PerlinScale = perlinScale;
 				vm.XSize = xSize;
 				vm.ZSize = zSize;
-				vm.HasChanged = true;
+				vm.RequireRebuild = true;
 				ProcPlaneCreateParameters createInfo = new ProcPlaneCreateParameters(
 					name: $"{i}",
 					materialName: meshMaterialName,
@@ -130,7 +130,7 @@ namespace _002_InfiniteLand
 					procPlane.GetVertexModifierAs<PerlinVertexModifierScriptableObject>().PerlinScale = perlinScale;
 					procPlane.GetVertexModifierAs<PerlinVertexModifierScriptableObject>().XSize = xSize;
 					procPlane.GetVertexModifierAs<PerlinVertexModifierScriptableObject>().ZSize = zSize;
-					procPlane.GetVertexModifierAs<PerlinVertexModifierScriptableObject>().HasChanged = true;
+					procPlane.GetVertexModifierAs<PerlinVertexModifierScriptableObject>().RequireRebuild = true;
 				}
 			}
 		}

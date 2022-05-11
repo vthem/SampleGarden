@@ -110,7 +110,7 @@ namespace _009_ProcMeshPerlinWorm
 			{
 				WormVertexModifier vm = procPlanes[i].GetVertexModifierAs<WormVertexModifier>();
 				vm.Lod = lod;
-				vm.HasChanged = true;
+				vm.RequireRebuild = true;
 				vm.normalRounding = normalRounding;
 			}
 		}

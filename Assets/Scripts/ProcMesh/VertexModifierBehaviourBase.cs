@@ -4,9 +4,9 @@ using UnityEngine;
 
 public class VertexModifierBehaviourBase : MonoBehaviour, IVertexModifier
 {
-	public float XSize { get => xSize; set { (HasChanged, xSize) = xSize.SetValue(value); } }
-	public float ZSize { get => zSize; set { (HasChanged, zSize) = zSize.SetValue(value); } }
-	public int Lod { get => lod; set { (HasChanged, lod) = lod.SetValue(value); } }
+	public float XSize { get => xSize; set { (RequireRebuild, xSize) = xSize.SetValue(value); } }
+	public float ZSize { get => zSize; set { (RequireRebuild, zSize) = zSize.SetValue(value); } }
+	public int Lod { get => lod; set { (RequireUpdate , lod) = lod.SetValue(value); } }
 
 	public virtual bool Initialize()
 	{
@@ -29,7 +29,8 @@ public class VertexModifierBehaviourBase : MonoBehaviour, IVertexModifier
 		return Vector3.up;
 	}
 
-	public bool HasChanged { get; set; }
+	public bool RequireRebuild { get; set; }
+	public bool RequireUpdate { get; set; }
 
 	public int VertexCount1D => VertexModifier.ComputeVertexCount1D(lod);
 

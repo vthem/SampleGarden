@@ -7,9 +7,9 @@ public static class VertexModifier
 
 public class VertexModifierBase :  IVertexModifier
 {
-    public float XSize { get => xSize; set { (HasChanged, xSize) = xSize.SetValue(value); } }
-    public float ZSize { get => zSize; set { (HasChanged, zSize) = zSize.SetValue(value); } }
-    public int Lod { get => lod; set { (HasChanged, lod) = lod.SetValue(value); } }
+    public float XSize { get => xSize; set { (RequireRebuild, xSize) = xSize.SetValue(value); } }
+    public float ZSize { get => zSize; set { (RequireRebuild, zSize) = zSize.SetValue(value); } }
+    public int Lod { get => lod; set { (RequireUpdate, lod) = lod.SetValue(value); } }
 
     public virtual bool Initialize()
     {
@@ -32,9 +32,10 @@ public class VertexModifierBase :  IVertexModifier
 		return Vector3.up;
 	}
 
-    public bool HasChanged { get; set; }
+    public bool RequireRebuild { get; set; }
+	public bool RequireUpdate { get; set; }
 
-    public int VertexCount1D => VertexModifier.ComputeVertexCount1D(lod);
+	public int VertexCount1D => VertexModifier.ComputeVertexCount1D(lod);
 
     public int VertexCount2D
     {
@@ -68,9 +69,9 @@ public class VertexModifierBase :  IVertexModifier
 [CreateAssetMenu(fileName = "VertexModifier", menuName = "TSW/ProcMesh/VertexModifier", order = 1)]
 public class VertexModifierScriptableObject : ScriptableObject, IVertexModifier
 {
-    public float XSize { get => xSize; set { (HasChanged, xSize) = xSize.SetValue(value); } }
-    public float ZSize { get => zSize; set { (HasChanged, zSize) = zSize.SetValue(value); } }
-    public int Lod { get => lod; set { (HasChanged, lod) = lod.SetValue(value); } }
+    public float XSize { get => xSize; set { (RequireRebuild, xSize) = xSize.SetValue(value); } }
+    public float ZSize { get => zSize; set { (RequireRebuild, zSize) = zSize.SetValue(value); } }
+    public int Lod { get => lod; set { (RequireUpdate, lod) = lod.SetValue(value); } }
 
     public virtual bool Initialize()
     {
@@ -93,9 +94,10 @@ public class VertexModifierScriptableObject : ScriptableObject, IVertexModifier
 		return Vector3.up;
 	}
 
-	public bool HasChanged { get; set; }
+	public bool RequireRebuild { get; set; }
+	public bool RequireUpdate { get; set; }
 
-    public int VertexCount1D => VertexModifier.ComputeVertexCount1D(lod);
+	public int VertexCount1D => VertexModifier.ComputeVertexCount1D(lod);
 
     public int VertexCount2D
     {
@@ -127,7 +129,7 @@ public class VertexModifierScriptableObject : ScriptableObject, IVertexModifier
     #region private
     private void OnValidate()
     {
-        HasChanged = true;
+        RequireRebuild = true;
     }
     #endregion
 }

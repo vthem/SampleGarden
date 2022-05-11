@@ -24,6 +24,7 @@ namespace _016_TerraGenCPU
 			float zVal = zStart + z * zDelta;
 			//var v = perlinMatrix.MultiplyPoint(new Vector3(xVal, 0, zVal));
 			var v = transform.TransformPoint(new Vector3(xVal, 0, zVal));
+			v += perlinOffset;
 			return new Vector3(xVal, Mathf.PerlinNoise(v.x, v.z), zVal);
 		}
 

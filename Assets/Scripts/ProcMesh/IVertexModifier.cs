@@ -6,9 +6,10 @@ public interface IVertexModifier
     int VertexCount1D { get; }
     int VertexCount2D { get; }
     int IndiceCount { get; }
-    public bool HasChanged { get; set; }
+    public bool RequireRebuild { get; set; }
+	public bool RequireUpdate { get; set; }
 
-    bool Initialize();
+	bool Initialize();
     Vector3 Vertex(int x, int z);
 
 	Vector3 Normal(int x, int z);
