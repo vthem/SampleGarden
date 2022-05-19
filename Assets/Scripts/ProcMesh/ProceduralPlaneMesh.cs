@@ -78,6 +78,7 @@ class ProceduralPlaneMesh
         var backLod = gp.lodInfo.backLod;
 		var recalculateNormals = gp.recalculateNormals;
 
+
 		// specify vertex count and layout
 		mesh.SetVertexBufferParams(vertexCount, vertexLayout);
 

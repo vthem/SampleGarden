@@ -4,6 +4,8 @@ using UnityEngine;
 using _016_TerraGenCPU;
 using System.Drawing;
 using UnityEditor.PackageManager.UI;
+using Stopwatch = System.Diagnostics.Stopwatch;
+using static UnityEditor.Experimental.AssetDatabaseExperimental.AssetDatabaseCounters;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -16,13 +18,18 @@ namespace _016_TerraGenCPU
 	{
 		[Range(1, 100)] public int PlaneCount = 1;
 		public Vector2 size = Vector2.one;
+		private Vector2 lastSize = Vector2.zero;
 
 		[Range(0, 7)] public int maxLOD = 0;
+		private int lastMaxLOD = 0;
+		
 		public Vector3 perlinOffset;
+		private Vector3 lastPerlinOffset;
 
 		public AnimationCurve lodVsDistance;
 
 		public Vector3 maxLODPosition = Vector3.zero;
+		private Vector3 lastMaxLODPosition = Vector3.zero;
 
 		private float NormalizedProcPlaneSize => 1 / (float)PlaneCount;
 
@@ -30,6 +37,7 @@ namespace _016_TerraGenCPU
 
 		private bool destroyOnNextUpdate = false;
 		private Vector3 lastPosition = Vector3.zero;
+		
 		private ProcPlaneBehaviour[] procPlaneArray = new ProcPlaneBehaviour[0];
 
 		void Update()
@@ -47,13 +55,24 @@ namespace _016_TerraGenCPU
 			int count = countX * countZ;
 			if (!container || (container && container.childCount != count))
 			{
+				Debug.Log("rebuild!");
 				DestroyContainer();
 				Populate();
 			}
 
+			bool update = false;
+			update |= Vector2.Distance(lastSize, size) > Mathf.Epsilon;
+			update |= lastMaxLOD != maxLOD;
+			update |= Vector3.Distance(lastPerlinOffset, perlinOffset) > Mathf.Epsilon;
+			update |= Vector3.Distance(lastMaxLODPosition, maxLODPosition) > Mathf.Epsilon;
+
 			UpdateMeshes();
 
 			lastPosition = transform.position;
+			lastSize = size;
+			lastMaxLOD = maxLOD;
+			lastPerlinOffset = perlinOffset;
+			lastMaxLODPosition = maxLODPosition;
 		}
 
 		void CreateContainer()
@@ -84,6 +103,7 @@ namespace _016_TerraGenCPU
 
 		void Populate()
 		{
+			var sw = Stopwatch.StartNew();
 			CreateContainer();
 
 			int countX = Mathf.FloorToInt(size.x / NormalizedProcPlaneSize);
@@ -100,14 +120,7 @@ namespace _016_TerraGenCPU
 				BaseInfo info = default;
 				Vector3 start = new Vector3(-size.x * 0.5f, 0, -size.y * 0.5f);
 				info.localPosition = start + (new Vector3(posXY.x * xSize, 0, posXY.y * zSize)) + (new Vector3(xSize, 0, zSize) * 0.5f);
-
-				float distance = (transform.TransformPoint(info.localPosition) - maxLODPosition).magnitude;
-				distance /= size.x; // normalize
-				distance = Mathf.Clamp01(distance);
-
-				float lodSample = lodVsDistance.Evaluate(distance);
-				lodSample = Mathf.Clamp01(lodSample);
-				info.lod = Mathf.RoundToInt(lodSample * maxLOD);
+				info.lod = GetLOD(info.localPosition);
 				baseInfoArray[i] = info;
 			}
 
@@ -136,6 +149,20 @@ namespace _016_TerraGenCPU
 
 				procPlaneArray[i] = procPlane;
 			}
+
+			Debug.Log($"Populate time:{sw.ElapsedMilliseconds}ms");
+		}
+
+		int GetLOD(Vector3 localPosition)
+		{
+			float distance = (transform.TransformPoint(localPosition) - maxLODPosition).magnitude;
+			distance /= size.x; // normalize
+			distance = Mathf.Clamp01(distance);
+
+			float lodSample = lodVsDistance.Evaluate(distance);
+			lodSample = Mathf.Clamp01(lodSample);
+			lodSample = Mathf.Clamp01(lodSample);
+			return Mathf.RoundToInt(lodSample * maxLOD);
 		}
 
 		void UpdateMeshes()
@@ -143,24 +170,35 @@ namespace _016_TerraGenCPU
 			if (!container)
 				return;
 
-			// first pass, update the lod
+			int countX = Mathf.FloorToInt(size.x / NormalizedProcPlaneSize);
+			int countZ = Mathf.FloorToInt(size.y / NormalizedProcPlaneSize);
+			int count = countX * countZ;
+
+			// first pass, update the lod, perlin offset, size
+			for (int i = 0; i < procPlaneArray.Length; ++i)
+			{
+				var procPlane = procPlaneArray[i];
+				IVertexModifier vm = procPlane.gameObject.GetComponent<WorldPerlinVertexModifierBehaviour>();
+
+				float xSize = size.x / countX;
+				float zSize = size.y / countZ;
+				(vm as VertexModifierBehaviourBase).XSize = xSize;
+				(vm as VertexModifierBehaviourBase).ZSize = zSize;
+				(vm as VertexModifierBehaviourBase).Lod = GetLOD(procPlane.transform.localPosition);
+				(vm as WorldPerlinVertexModifierBehaviour).perlinOffset = perlinOffset;
+			}
+
+			// second pass: update the lod of the neighbor
 			for (int i = 0; i < procPlaneArray.Length; ++i)
 			{
 
 			}
-
-			// second pass: update the lod of the neighbor
 		}
 
 		[ContextMenu("Rebuild")]
 		void Rebuild()
 		{
 			DestroyContainer();
-		}
-
-		private void OnValidate()
-		{
-			destroyOnNextUpdate = true;
 		}
 	}
 }

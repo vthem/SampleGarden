@@ -6,7 +6,7 @@ public class VertexModifierBehaviourBase : MonoBehaviour, IVertexModifier
 {
 	public float XSize { get => xSize; set { (RequireRebuild, xSize) = xSize.SetValue(value); } }
 	public float ZSize { get => zSize; set { (RequireRebuild, zSize) = zSize.SetValue(value); } }
-	public int Lod { get => lod; set { (RequireUpdate , lod) = lod.SetValue(value); } }
+	public int Lod { get => lod; set { (RequireRebuild, lod) = lod.SetValue(value); } }
 
 	public virtual bool Initialize()
 	{
