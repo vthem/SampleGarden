@@ -31,13 +31,13 @@ namespace _003_Sphere
 		{
 			procPlanes = new ProcPlaneBehaviour[6];
 			var infos = new (Vector3 dir, string dirName, int idx)[] {
-			(Vector3.up,      "up",      0),
-			(Vector3.down,    "down",    1),
-			(Vector3.left,    "left",    2),
-			(Vector3.right,   "right",   3),
-			(Vector3.forward, "forward", 4),
-			(Vector3.back,    "back",    5)
-		};
+				(Vector3.up,      "up",      0),
+				(Vector3.down,    "down",    1),
+				(Vector3.left,    "left",    2),
+				(Vector3.right,   "right",   3),
+				(Vector3.forward, "forward", 4),
+				(Vector3.back,    "back",    5)
+			};
 			foreach (var info in infos)
 				procPlanes[info.idx] = CreateProcPlane(info.dir, info.dirName);
 		}
