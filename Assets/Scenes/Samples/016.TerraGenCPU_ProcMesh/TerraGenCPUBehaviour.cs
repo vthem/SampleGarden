@@ -1,17 +1,13 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using _016_TerraGenCPU;
-using System.Drawing;
-using UnityEditor.PackageManager.UI;
+
+
 using Stopwatch = System.Diagnostics.Stopwatch;
-using static UnityEditor.Experimental.AssetDatabaseExperimental.AssetDatabaseCounters;
 
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
-namespace _016_TerraGenCPU
+namespace _016_TerraGenCPU_ProcMesh
 {
 	[ExecuteInEditMode]
 	public class TerraGenCPUBehaviour : MonoBehaviour
@@ -22,7 +18,7 @@ namespace _016_TerraGenCPU
 
 		[Range(0, 7)] public int maxLOD = 0;
 		private int lastMaxLOD = 0;
-		
+
 		public Vector3 perlinOffset;
 		private Vector3 lastPerlinOffset;
 
@@ -37,10 +33,10 @@ namespace _016_TerraGenCPU
 
 		private bool destroyOnNextUpdate = false;
 		private Vector3 lastPosition = Vector3.zero;
-		
+
 		private ProcPlaneBehaviour[] procPlaneArray = new ProcPlaneBehaviour[0];
 
-		void Update()
+		private void Update()
 		{
 			bool destroyBecausePositionChanged = Vector3.Distance(lastPosition, transform.position) > Mathf.Epsilon;
 
@@ -48,7 +44,7 @@ namespace _016_TerraGenCPU
 			{
 				DestroyContainer();
 				destroyOnNextUpdate = false;
-			}			
+			}
 
 			int countX = Mathf.FloorToInt(size.x / NormalizedProcPlaneSize);
 			int countZ = Mathf.FloorToInt(size.y / NormalizedProcPlaneSize);
@@ -75,35 +71,39 @@ namespace _016_TerraGenCPU
 			lastMaxLODPosition = maxLODPosition;
 		}
 
-		void CreateContainer()
+		private void CreateContainer()
 		{
 			if (container)
+			{
 				return;
+			}
 
-			var obj = new GameObject("Container");
+			GameObject obj = new GameObject("Container");
 			container = obj.transform;
 			container.SetParent(transform);
 			container.localPosition = Vector3.zero;
 		}
 
-		void DestroyContainer()
+		private void DestroyContainer()
 		{
 			if (!container)
+			{
 				return;
+			}
 
 			container.gameObject.SafeDestroy();
 			container = null;
 		}
 
-		struct BaseInfo
+		private struct BaseInfo
 		{
 			public Vector3 localPosition;
 			public int lod;
 		};
 
-		void Populate()
+		private void Populate()
 		{
-			var sw = Stopwatch.StartNew();
+			Stopwatch sw = Stopwatch.StartNew();
 			CreateContainer();
 
 			int countX = Mathf.FloorToInt(size.x / NormalizedProcPlaneSize);
@@ -153,7 +153,7 @@ namespace _016_TerraGenCPU
 			Debug.Log($"Populate time:{sw.ElapsedMilliseconds}ms");
 		}
 
-		int GetLOD(Vector3 localPosition)
+		private int GetLOD(Vector3 localPosition)
 		{
 			float distance = (transform.TransformPoint(localPosition) - maxLODPosition).magnitude;
 			distance /= size.x; // normalize
@@ -165,10 +165,12 @@ namespace _016_TerraGenCPU
 			return Mathf.RoundToInt(lodSample * maxLOD);
 		}
 
-		void UpdateMeshes()
+		private void UpdateMeshes()
 		{
 			if (!container)
+			{
 				return;
+			}
 
 			int countX = Mathf.FloorToInt(size.x / NormalizedProcPlaneSize);
 			int countZ = Mathf.FloorToInt(size.y / NormalizedProcPlaneSize);
@@ -177,7 +179,7 @@ namespace _016_TerraGenCPU
 			// first pass, update the lod, perlin offset, size
 			for (int i = 0; i < procPlaneArray.Length; ++i)
 			{
-				var procPlane = procPlaneArray[i];
+				ProcPlaneBehaviour procPlane = procPlaneArray[i];
 				IVertexModifier vm = procPlane.gameObject.GetComponent<WorldPerlinVertexModifierBehaviour>();
 
 				float xSize = size.x / countX;
@@ -196,12 +198,11 @@ namespace _016_TerraGenCPU
 		}
 
 		[ContextMenu("Rebuild")]
-		void Rebuild()
+		private void Rebuild()
 		{
 			DestroyContainer();
 		}
 	}
-}
 
 #if UNITY_EDITOR
 // A tiny custom editor for ExampleScript component
@@ -228,3 +229,5 @@ public class ExampleEditor : Editor
 	}
 }
 #endif
+
+}

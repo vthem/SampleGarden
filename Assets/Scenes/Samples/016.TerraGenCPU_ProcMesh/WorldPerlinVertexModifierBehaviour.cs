@@ -1,7 +1,6 @@
-using System;
 using UnityEngine;
 
-namespace _016_TerraGenCPU
+namespace _016_TerraGenCPU_ProcMesh
 {
 	[ExecuteInEditMode]
 	public class WorldPerlinVertexModifierBehaviour : VertexModifierBehaviourBase, IVertexModifierGetter
@@ -13,7 +12,9 @@ namespace _016_TerraGenCPU
 		public override bool Initialize()
 		{
 			if (!base.Initialize())
+			{
 				return false;
+			}
 
 			//perlinMatrix = Matrix4x4.TRS(Vector3.one, Quaternion.identity, Vector3.one * perlinScale);
 
@@ -25,7 +26,7 @@ namespace _016_TerraGenCPU
 			float xVal = xStart + x * xDelta;
 			float zVal = zStart + z * zDelta;
 			//var v = perlinMatrix.MultiplyPoint(new Vector3(xVal, 0, zVal));
-			var v = transform.TransformPoint(new Vector3(xVal, 0, zVal));
+			Vector3 v = transform.TransformPoint(new Vector3(xVal, 0, zVal));
 			v += perlinOffset;
 			return new Vector3(xVal, Mathf.PerlinNoise(v.x, v.z), zVal);
 		}
