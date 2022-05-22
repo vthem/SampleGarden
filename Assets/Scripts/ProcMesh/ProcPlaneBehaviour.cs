@@ -30,6 +30,11 @@ public struct ProcPlaneCreateParameters
 	}
 }
 
+public interface IVertexModifierGetter
+{
+	IVertexModifier VertexModifier { get; }
+}
+
 [ExecuteInEditMode]
 public class ProcPlaneBehaviour : MonoBehaviour
 {
@@ -98,19 +103,15 @@ public class ProcPlaneBehaviour : MonoBehaviour
 
         if (null == vertexModifier)
         {			
-			var localVm = GetComponent<IVertexModifier>();
-			if (localVm != null)
+			var getter = GetComponent<IVertexModifierGetter>();
+			if (getter != null)
 			{
-				Debug.Log("get vm from gameobject");
-				vertexModifier = localVm;
+				vertexModifier = getter.VertexModifier;
 			}
         }
 		if (null == vertexModifier)
 		{
 			return;
-			//if (!customVertexModifier)
-			//	customVertexModifier = ScriptableObject.CreateInstance<VertexModifierScriptableObject>(); ;
-			//vertexModifier = customVertexModifier;
 		}
 		
         if (!IsMeshInfoValid() || forceRebuild || (vertexModifier.RequireRebuild) || forceRebuildOnce)

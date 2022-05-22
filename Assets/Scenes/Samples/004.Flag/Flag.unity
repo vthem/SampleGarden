@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.37311953, g: 0.38074014, b: 0.3587274, a: 1}
+  m_IndirectSpecularColor: {r: 0.37311992, g: 0.38074034, b: 0.35872713, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -218,6 +218,7 @@ GameObject:
   - component: {fileID: 1317558773}
   - component: {fileID: 1317558772}
   - component: {fileID: 1317558771}
+  - component: {fileID: 1317558775}
   m_Layer: 0
   m_Name: ProcPlane
   m_TagString: Untagged
@@ -237,14 +238,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b9ed3b520ba6145478a1162a768dbfc2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  recalculateNormals: 1
   lodInfo:
     leftLod: 0
     frontLod: 0
     rightLod: 0
     backLod: 0
   forceRebuild: 1
-  customVertexModifier: {fileID: 11400000, guid: 1184ca299bd66114391a4ef6992e7869,
-    type: 2}
 --- !u!23 &1317558772
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -308,3 +308,16 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1317558775
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1317558770}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 220cc522c8b421a40a3d29c16063fe49, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  vertexModifier: {fileID: 11400000, guid: 1184ca299bd66114391a4ef6992e7869, type: 2}
