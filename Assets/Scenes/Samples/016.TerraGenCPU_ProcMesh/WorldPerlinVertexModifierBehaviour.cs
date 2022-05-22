@@ -1,3 +1,7 @@
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 using UnityEngine;
 
 namespace _016_TerraGenCPU_ProcMesh
@@ -48,4 +52,21 @@ namespace _016_TerraGenCPU_ProcMesh
 		#endregion // private
 	}
 
+
+
+#if UNITY_EDITOR
+	[CustomEditor(typeof(WorldPerlinVertexModifierBehaviour))]
+	public class WorldPerlinVertexModifierEditor: Editor
+	{
+		public override void OnInspectorGUI()
+		{
+			base.OnInspectorGUI();
+			DrawDefaultInspector();
+
+			VertexModifierBehaviourBase vm = target as VertexModifierBehaviourBase;
+			EditorGUILayout.LabelField($"RequireRebuild:{vm.RequireRebuild}");
+			EditorGUILayout.LabelField($"RequireUpdate:{vm.RequireUpdate}");
+		}
+	}
+#endif
 }
