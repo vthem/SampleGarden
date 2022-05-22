@@ -4,9 +4,11 @@ using UnityEngine;
 namespace _016_TerraGenCPU
 {
 	[ExecuteInEditMode]
-	public class WorldPerlinVertexModifierBehaviour : VertexModifierBehaviourBase
+	public class WorldPerlinVertexModifierBehaviour : VertexModifierBehaviourBase, IVertexModifierGetter
 	{
 		public Vector3 perlinOffset = new Vector3(0.232f, 0.329879f, 0.2398732f);
+
+		public IVertexModifier VertexModifier => this;
 
 		public override bool Initialize()
 		{
