@@ -7,9 +7,9 @@ public static class VertexModifier
 
 public class VertexModifierBase :  IVertexModifier
 {
-    public float XSize { get => xSize; set { (RequireRebuild, xSize) = xSize.SetValue(value); } }
-    public float ZSize { get => zSize; set { (RequireRebuild, zSize) = zSize.SetValue(value); } }
-    public int Lod { get => lod; set { (RequireRebuild, lod) = lod.SetValue(value); } }
+    public float XSize { get => xSize; set { RequireRebuild |= value.SetTo(ref xSize); } }
+    public float ZSize { get => zSize; set { RequireRebuild |= value.SetTo(ref zSize); } }
+    public int Lod { get => lod; set { RequireRebuild |= value.SetTo(ref lod); } }
 
     public virtual bool Initialize()
     {
@@ -69,11 +69,11 @@ public class VertexModifierBase :  IVertexModifier
 [CreateAssetMenu(fileName = "VertexModifier", menuName = "TSW/ProcMesh/VertexModifier", order = 1)]
 public class VertexModifierScriptableObject : ScriptableObject, IVertexModifier
 {
-    public float XSize { get => xSize; set { (RequireRebuild, xSize) = xSize.SetValue(value); } }
-    public float ZSize { get => zSize; set { (RequireRebuild, zSize) = zSize.SetValue(value); } }
-    public int Lod { get => lod; set { (RequireRebuild, lod) = lod.SetValue(value); } }
+	public float XSize { get => xSize; set { RequireRebuild |= value.SetTo(ref xSize); } }
+	public float ZSize { get => zSize; set { RequireRebuild |= value.SetTo(ref zSize); } }
+	public int Lod { get => lod; set { RequireRebuild |= value.SetTo(ref lod); } }
 
-    public virtual bool Initialize()
+	public virtual bool Initialize()
     {
         xStart = -xSize * 0.5f;
         zStart = -zSize * 0.5f;

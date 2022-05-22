@@ -137,10 +137,10 @@ public class ProcPlaneBehaviour : MonoBehaviour
 			enableFrameThrottling = !EditorApplication.isPlaying;
 #endif
 
-			//if (enableFrameThrottling && frameElapsed.TotalMilliseconds > 5)
-			//{
-			//	return;
-			//}
+			if (enableFrameThrottling && frameElapsed.TotalMilliseconds > 5)
+			{
+				return;
+			}
 
 			forceRebuildOnce = false;
 			vertexModifier.RequireRebuild = false;
@@ -153,6 +153,7 @@ public class ProcPlaneBehaviour : MonoBehaviour
 
 		if (vertexModifier.RequireUpdate)
 		{
+			Debug.Log("Require Update set!");
 			objToParent = Matrix4x4.TRS(transform.localPosition, Quaternion.identity, Vector3.one);
 			material.SetMatrix("_ObjToParent", objToParent);
 			meshGenerateParameter.recalculateNormals = recalculateNormals;

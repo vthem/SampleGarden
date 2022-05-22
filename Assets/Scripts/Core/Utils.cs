@@ -16,20 +16,12 @@ public static class Utils
 		return (n % range + range) % range;
 	}
 
-    public static (bool, int) SetValue(this int target, int v)
-    {
-        return (target != v, v);
-    }
-
-    public static (bool, float) SetValue(this float target, float v)
-    {
-        return (!Mathf.Approximately(target, v), v);
-    }
-
-    public static (bool, Vector3) SetValue(this Vector3 target, Vector3 v)
-    {
-        return (target != v, v);
-    }
+	public static bool SetTo<T>(this T src, ref T dst) where T : struct, System.IEquatable<T>
+	{
+		bool diff = src.Equals(dst);
+		dst = src;
+		return diff;
+	}
 
     public static float Remap(this float value, float fromBegin, float fromEnd, float toBegin, float toEnd)
     {

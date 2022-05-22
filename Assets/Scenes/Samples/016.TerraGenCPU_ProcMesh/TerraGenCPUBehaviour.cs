@@ -15,18 +15,15 @@ namespace _016_TerraGenCPU_ProcMesh
 	{
 		[Range(1, 100)] public int PlaneCount = 1;
 		public Vector2 size = Vector2.one;
-		private Vector2 lastSize = Vector2.zero;
 
 		[Range(0, 7)] public int maxLOD = 0;
-		private int lastMaxLOD = 0;
 
 		public Vector3 perlinOffset;
-		private Vector3 lastPerlinOffset;
+		public float perlinScale = 1f;
 
 		public AnimationCurve lodVsDistance;
 
 		public Vector3 maxLODPosition = Vector3.zero;
-		private Vector3 lastMaxLODPosition = Vector3.zero;
 
 		private float NormalizedProcPlaneSize => 1 / (float)PlaneCount;
 
@@ -57,24 +54,9 @@ namespace _016_TerraGenCPU_ProcMesh
 
 			bool positionChanged = Vector3.Distance(lastPosition, transform.position) > Mathf.Epsilon;
 
-			bool update = false;
-			update |= Vector2.Distance(lastSize, size) > Mathf.Epsilon;
-			update |= lastMaxLOD != maxLOD;
-			update |= Vector3.Distance(lastPerlinOffset, perlinOffset) > Mathf.Epsilon;
-			update |= Vector3.Distance(lastMaxLODPosition, maxLODPosition) > Mathf.Epsilon;
-			update |= positionChanged;
-
-			if (update)
-			{
-				Debug.Log("UpdateMeshes!");
-				UpdateMeshes();
-			}
+			UpdateMeshes(positionChanged);
 
 			lastPosition = transform.position;
-			lastSize = size;
-			lastMaxLOD = maxLOD;
-			lastPerlinOffset = perlinOffset;
-			lastMaxLODPosition = maxLODPosition;
 		}
 
 		private void CreateContainer()
@@ -148,7 +130,8 @@ namespace _016_TerraGenCPU_ProcMesh
 				(vm as VertexModifierBehaviourBase).XSize = xSize;
 				(vm as VertexModifierBehaviourBase).ZSize = zSize;
 				(vm as VertexModifierBehaviourBase).Lod = baseInfoArray[i].lod;
-				(vm as WorldPerlinVertexModifierBehaviour).perlinOffset = perlinOffset;
+				(vm as WorldPerlinVertexModifierBehaviour).PerlinOffset = perlinOffset;
+				(vm as WorldPerlinVertexModifierBehaviour).PerlinScale = perlinScale;
 				procPlane.VertexModifier = vm;
 
 				procPlane.transform.localPosition = baseInfoArray[i].localPosition;
@@ -173,7 +156,7 @@ namespace _016_TerraGenCPU_ProcMesh
 			return Mathf.RoundToInt(lodSample * maxLOD);
 		}
 
-		private void UpdateMeshes()
+		private void UpdateMeshes(bool forceUpdate)
 		{
 			if (!container)
 			{
@@ -197,9 +180,10 @@ namespace _016_TerraGenCPU_ProcMesh
 				(vm as VertexModifierBehaviourBase).XSize = xSize;
 				(vm as VertexModifierBehaviourBase).ZSize = zSize;
 				(vm as VertexModifierBehaviourBase).Lod = GetLOD(procPlane.transform.localPosition);
-				(vm as WorldPerlinVertexModifierBehaviour).perlinOffset = perlinOffset;
+				(vm as WorldPerlinVertexModifierBehaviour).PerlinOffset = perlinOffset;
+				(vm as WorldPerlinVertexModifierBehaviour).PerlinScale = perlinScale;
 				
-				vm.RequireUpdate = !vm.RequireRebuild;
+				vm.RequireUpdate |= forceUpdate;
 			}
 
 			// second pass: update the lod of the neighbor
@@ -232,24 +216,22 @@ namespace _016_TerraGenCPU_ProcMesh
 	[CustomEditor(typeof(TerraGenCPUBehaviour))]
 	public class TerraGenCPUEditor : Editor
 	{
-		// Custom in-scene UI for when ExampleScript
-		// component is selected.
-		public void OnSceneGUI()
-		{
-			TerraGenCPUBehaviour terraGen = target as TerraGenCPUBehaviour;
+		//public void OnSceneGUI()
+		//{
+		//	TerraGenCPUBehaviour terraGen = target as TerraGenCPUBehaviour;
 
-			float size = HandleUtility.GetHandleSize(terraGen.maxLODPosition) * 0.5f;
-			Vector3 snap = Vector3.one * 0.5f;
+		//	float size = HandleUtility.GetHandleSize(terraGen.maxLODPosition) * 0.5f;
+		//	Vector3 snap = Vector3.one * 0.5f;
 
-			EditorGUI.BeginChangeCheck();
-			Vector3 newTargetPosition = Handles.FreeMoveHandle(terraGen.maxLODPosition, terraGen.transform.rotation, size, snap, Handles.DotHandleCap);
-			newTargetPosition.y = 0f;
-			if (EditorGUI.EndChangeCheck())
-			{
-				Undo.RecordObject(terraGen, "Change Look At Target Position");
-				terraGen.maxLODPosition = newTargetPosition;
-			}
-		}
+		//	EditorGUI.BeginChangeCheck();
+		//	Vector3 newTargetPosition = Handles.FreeMoveHandle(terraGen.maxLODPosition, terraGen.transform.rotation, size, snap, Handles.DotHandleCap);
+		//	newTargetPosition.y = 0f;
+		//	if (EditorGUI.EndChangeCheck())
+		//	{
+		//		Undo.RecordObject(terraGen, "Change Look At Target Position");
+		//		terraGen.maxLODPosition = newTargetPosition;
+		//	}
+		//}
 	}
 #endif
 }

@@ -9,7 +9,8 @@ namespace _016_TerraGenCPU_ProcMesh
 	[ExecuteInEditMode]
 	public class WorldPerlinVertexModifierBehaviour : VertexModifierBehaviourBase, IVertexModifierGetter
 	{
-		public Vector3 perlinOffset = new Vector3(0.232f, 0.329879f, 0.2398732f);
+		public Vector3 PerlinOffset { get => perlinOffset; set { RequireUpdate |= value.SetTo(ref perlinOffset); } }
+		public float PerlinScale { get => perlinScale; set { RequireUpdate |= value.SetTo(ref perlinScale); } }
 
 		public IVertexModifier VertexModifier => this;
 
@@ -31,23 +32,15 @@ namespace _016_TerraGenCPU_ProcMesh
 			float zVal = zStart + z * zDelta;
 			//var v = perlinMatrix.MultiplyPoint(new Vector3(xVal, 0, zVal));
 			Vector3 v = transform.TransformPoint(new Vector3(xVal, 0, zVal));
-			v += perlinOffset;
+			v += PerlinOffset;
+			v *= PerlinScale;
 			return new Vector3(xVal, Mathf.PerlinNoise(v.x, v.z), zVal);
 		}
 
-		//public float PerlinScale { get => perlinScale; set => perlinScale = value; }
-		//public Vector3 LocalPosition { get => localPosition; set => localPosition = value; }
-
 		#region private
-		//[SerializeField] protected float perlinScale;
-		//[SerializeField] protected Vector3 localPosition;
 
-		//protected Matrix4x4 perlinMatrix;
-
-		private void Update()
-		{
-			//LocalPosition = transform.position;
-		}
+		private Vector3 perlinOffset = new Vector3(0.232f, 0.329879f, 0.2398732f);
+		private float perlinScale = 1f;
 
 		#endregion // private
 	}
@@ -56,7 +49,7 @@ namespace _016_TerraGenCPU_ProcMesh
 
 #if UNITY_EDITOR
 	[CustomEditor(typeof(WorldPerlinVertexModifierBehaviour))]
-	public class WorldPerlinVertexModifierEditor: Editor
+	public class WorldPerlinVertexModifierEditor : Editor
 	{
 		public override void OnInspectorGUI()
 		{
