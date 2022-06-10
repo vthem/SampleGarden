@@ -12,6 +12,7 @@ namespace _017_TerraGenCPU_Mesh
 		public Vector2Int count = Vector2Int.one;
 		public Vector2 size = Vector2.one;
 		public Texture2D heightMap;
+		public float heightScale = 1f;
 
 		public void CreateMesh()
 		{
@@ -35,7 +36,7 @@ namespace _017_TerraGenCPU_Mesh
 				Vector2 pos = uv * size;
 
 				var color = heightMap.GetPixelBilinear(uv.x, uv.y);
-				Vector3 pos3 = new Vector3(pos.x, color.r, pos.y);
+				Vector3 pos3 = new Vector3(pos.x, color.r * heightScale, pos.y);
 				vertArray[i] = pos3;
 			}
 			mesh.vertices = vertArray;
