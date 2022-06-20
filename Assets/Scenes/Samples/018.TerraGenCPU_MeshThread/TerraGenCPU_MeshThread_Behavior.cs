@@ -58,11 +58,9 @@ namespace _018_TerraGenCPU_MeshThread
 			Vector2Int idx = Utils.GetXYFromIndex(i, verticeCount.x);
 			Vector2 fCount = verticeCount;
 			Vector2 uv = idx / fCount;
-			Vector2 pixelPos = pixelCount * uv;
-			Vector2Int pixelPosInt = new Vector2Int(Mathf.FloorToInt(pixelPos.x), Mathf.FloorToInt(pixelPos.y));
 
-			int dataIndex = Utils.GetArrayIdxClamp(pixelPosInt, pixelCount);
-			Color color = heightMapData[dataIndex];
+
+			Color32 color = Utils.SampleColorFromNativeArray(uv, heightMapData, pixelCount);
 			Vector2 pos = uv * size;
 			Vector3 pos3 = new Vector3(pos.x, color.r * heightScale, pos.y);
 			VertexData vd = new VertexData();
@@ -81,8 +79,14 @@ namespace _018_TerraGenCPU_MeshThread
 			vertices = new NativeArray<VertexData>(verticesCount, Allocator.Persistent);
 			indices = new NativeArray<uint>(triCount, Allocator.Persistent);
 
-			NativeArray<Color32> truc = heightMap.GetRawTextureData<Color32>();
-			Vector2Int pixelCount = new Vector2Int(heightMap.width, heightMap.height);
+			NativeArray<Color32> heightData = heightMap.GetRawTextureData<Color32>();
+			Vector2Int textureSize = new Vector2Int(heightMap.width, heightMap.height);
+			var max = Utils.GetArrayIdxClamp(textureSize - Vector2Int.one, textureSize);
+			if (max >= heightData.Length)
+			{
+				Debug.Log($"Invalid texture size {max} {heightData.Length}");
+				return;
+			}
 
 			int tIdx = 0;
 			for (int i = 0; i < vertices.Length; ++i)
@@ -92,14 +96,19 @@ namespace _018_TerraGenCPU_MeshThread
 				Vector2 uv = idx / fCount;
 				Vector2 pos = uv * size;
 
-				var color = heightMap.GetPixelBilinear(uv.x, uv.y);
+				Color32 color = heightMap.GetPixelBilinear(uv.x, uv.y);
 				Vector3 pos3 = new Vector3(pos.x, color.r * heightScale, pos.y);
 				VertexData vd = new VertexData();
 				vd.pos = pos3;
 				vd.uv = uv;
 				vertices[i] = vd;
 
-				vertices[i] = ComputeVertexData(i, count, size, heightScale, truc, pixelCount);
+				color = Utils.SampleColorFromNativeArray(uv, heightData, textureSize);
+				pos3 = new Vector3(pos.x, color.r * heightScale, pos.y);
+				vd = new VertexData();
+				vd.pos = pos3;
+				vd.uv = uv;
+				vertices[i] = vd;
 
 				if (tIdx < indices.Length)
 				{

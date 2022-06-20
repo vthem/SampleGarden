@@ -1,4 +1,6 @@
 ﻿#if UNITY_EDITOR
+using Unity.Collections;
+
 using UnityEditor;
 #endif
 
@@ -44,9 +46,9 @@ public static class Utils
 
 	public static int GetArrayIdxClamp(Vector2Int v, Vector2Int count)
 	{
-		v.x = Mathf.Clamp(v.x, 0, count.x - 1);
-		v.y = Mathf.Clamp(v.y, 0, count.y - 1);
-		return v.x + v.y * (count.x - 1);
+		v.x = Mathf.Clamp(v.x, 0, count.x);
+		v.y = Mathf.Clamp(v.y, 0, count.y);
+		return v.x + v.y * (count.x);
 	}
 
 	public static Vector2Int GetXYFromIndex(int index, int xCount)
@@ -55,6 +57,16 @@ public static class Utils
 		v.x = index % xCount;
 		v.y = (index - v.x) / xCount;
 		return v;
+	}
+
+	public static Color32 SampleColorFromNativeArray(Vector2 uv, NativeArray<Color32> colorArray, Vector2Int textureSize)
+	{
+		Vector2Int pixelMaxIndex = textureSize - Vector2Int.one;
+		Vector2Int pixelCount = textureSize;
+		Vector2 pixelIndex = pixelMaxIndex * new Vector2(uv.x, uv.y);
+		Vector2Int pixelIndexRounded = new Vector2Int(Mathf.RoundToInt(pixelIndex.x), Mathf.RoundToInt(pixelIndex.y));
+		int idx = Utils.GetArrayIdxClamp(pixelIndexRounded, pixelCount);
+		return colorArray[idx];
 	}
 }
 
