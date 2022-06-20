@@ -42,6 +42,13 @@ public static class Utils
         return v.x + v.y * count.x;
     }
 
+	public static int GetArrayIdxClamp(Vector2Int v, Vector2Int count)
+	{
+		v.x = Mathf.Clamp(v.x, 0, count.x - 1);
+		v.y = Mathf.Clamp(v.y, 0, count.y - 1);
+		return v.x + v.y * (count.x - 1);
+	}
+
 	public static Vector2Int GetXYFromIndex(int index, int xCount)
 	{
 		Vector2Int v = new Vector2Int(); ;
