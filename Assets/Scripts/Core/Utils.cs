@@ -59,7 +59,7 @@ public static class Utils
 		return v;
 	}
 
-	public static Color32 SampleColorFromNativeArray(Vector2 uv, NativeArray<Color32> colorArray, Vector2Int textureSize)
+	public static T SampleColorFromNativeArray<T>(Vector2 uv, NativeArray<T> colorArray, Vector2Int textureSize) where T : struct
 	{
 		Vector2Int pixelMaxIndex = textureSize - Vector2Int.one;
 		Vector2Int pixelCount = textureSize;
