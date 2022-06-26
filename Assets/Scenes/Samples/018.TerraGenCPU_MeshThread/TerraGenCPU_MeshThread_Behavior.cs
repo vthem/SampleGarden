@@ -51,9 +51,10 @@ namespace _018_TerraGenCPU_MeshThread
 			{
 				for (int vertexIndex = 0; vertexIndex < vertices.Length; ++vertexIndex)
 				{
-					Vector2Int globalIdx = Utils.GetXYFromIndex(vertexIndex + offset, count.x);
+					int gIndex = vertexIndex + offset;
+					Vector2Int gPos = Utils.GetXYFromIndex(gIndex, count.x);
 					Vector2 fCount = count;
-					Vector2 uv = globalIdx / fCount;
+					Vector2 uv = gPos / fCount;
 					Vector2 pos = uv * size;
 
 					var height = Utils.SampleColorFromNativeArray(uv, heightData, textureSize);
@@ -65,10 +66,10 @@ namespace _018_TerraGenCPU_MeshThread
 
 					if ((vertexIndex * 6) < indices.Length)
 					{
-						uint p1 = (uint)vertexIndex;
-						uint p2 = ((uint)vertexIndex + 1);
-						uint p3 = ((uint)vertexIndex + (uint)count.x);
-						uint p4 = ((uint)vertexIndex + (uint)count.x + 1);
+						uint p1 = (uint)gIndex;
+						uint p2 = ((uint)gIndex + 1);
+						uint p3 = ((uint)gIndex + (uint)count.x);
+						uint p4 = ((uint)gIndex + (uint)count.x + 1);
 						indices[(vertexIndex * 6) + 0] = p1;
 						indices[(vertexIndex * 6) + 1] = p3;
 						indices[(vertexIndex * 6) + 2] = p2;
