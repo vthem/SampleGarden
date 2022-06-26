@@ -34,15 +34,15 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _HeightMap:
-        m_Texture: {fileID: 2800000, guid: bf4a521807b789949b83312e8b73b7ba, type: 3}
+        m_Texture: {fileID: 2800000, guid: 4f49a999918bf19498a4100323689610, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTexture:
-        m_Texture: {fileID: 2800000, guid: bf4a521807b789949b83312e8b73b7ba, type: 3}
+        m_Texture: {fileID: 2800000, guid: 538495f089c2458458e9ac8fed7909fc, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _NormalMap:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: c8c6ec311d6f75747b21ac09839ead88, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Floats:
