@@ -102,16 +102,9 @@ namespace _018_TerraGenCPU_MeshThread
 				Vector2 uv = idx / fCount;
 				Vector2 pos = uv * size;
 
-				Color32 color = heightMap.GetPixelBilinear(uv.x, uv.y);
-				Vector3 pos3 = new Vector3(pos.x, color.r * heightScale, pos.y);
-				VertexData vd = new VertexData();
-				vd.pos = pos3;
-				vd.uv = uv;
-				vertices[i] = vd;
-
 				var height = Utils.SampleColorFromNativeArray(uv, heightData, textureSize);
-				pos3 = new Vector3(pos.x, height.r / (255f) * heightScale, pos.y);
-				vd = new VertexData();
+				Vector3 pos3 = new Vector3(pos.x, height.r / (255f) * heightScale, pos.y);
+				VertexData vd = new VertexData();
 				vd.pos = pos3;
 				vd.uv = uv;
 				vertices[i] = vd;
@@ -130,24 +123,6 @@ namespace _018_TerraGenCPU_MeshThread
 					indices[tIdx++] = p4;
 				}
 			}
-
-			//for (uint y = 0; y < count.y - 1; ++y)
-			//{
-			//	for (uint x = 0; x < count.x - 1; ++x)
-			//	{
-			//		uint vi = y * (uint)(count.x) + x;
-			//		uint p1 = vi;
-			//		uint p2 = (vi + 1);
-			//		uint p3 = (vi + (uint)count.x);
-			//		uint p4 = (vi + (uint)count.x + 1);
-			//		indices[tIdx++] = p1;
-			//		indices[tIdx++] = p3;
-			//		indices[tIdx++] = p2;
-			//		indices[tIdx++] = p2;
-			//		indices[tIdx++] = p3;
-			//		indices[tIdx++] = p4;
-			//	}
-			//}
 
 			MeshFilter meshFilter = gameObject.GetComponent<MeshFilter>();
 
