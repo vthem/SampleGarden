@@ -7,6 +7,7 @@ using Unity.Jobs;
 using UnityEngine.UIElements;
 using static UnityEngine.InputManagerEntry;
 using Unity.Jobs.LowLevel.Unsafe;
+using Unity.Collections.LowLevel.Unsafe;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -35,72 +36,67 @@ namespace _018_TerraGenCPU_MeshThread
 			new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2)
 		};
 
+		struct RGB
+		{
+			public byte r;
+			public byte g;
+			public byte b;
+		}
 
-		private struct MeshJob : IJob
+		private struct VerticesJob : IJobParallelFor
 		{
 			public NativeArray<VertexData> vertices;
-			public NativeArray<uint> indices;
 			[ReadOnly] public NativeArray<RGB> heightData;
 			[ReadOnly] public Vector2Int count;
 			[ReadOnly] public Vector2 size;
 			[ReadOnly] public Vector2Int textureSize;
 			[ReadOnly] public float heightScale;
-			[ReadOnly] public int offset;
 
-			public void Execute()
+			public void Execute(int vertexIndex)
 			{
-				for (int vertexIndex = 0; vertexIndex < vertices.Length; ++vertexIndex)
-				{
-					int gIndex = vertexIndex + offset;
-					Vector2Int gPos = Utils.GetXYFromIndex(gIndex, count.x);
-					Vector2 fCount = count;
-					Vector2 uv = gPos / fCount;
-					Vector2 pos = uv * size;
+				Vector2Int gPos = Utils.GetXYFromIndex(vertexIndex, count.x);
+				Vector2 fCount = count;
+				Vector2 uv = gPos / fCount;
+				Vector2 pos = uv * size;
 
-					var height = Utils.SampleColorFromNativeArray(uv, heightData, textureSize);
-					Vector3 pos3 = new Vector3(pos.x, height.r / (255f) * heightScale, pos.y);
-					VertexData vd = new VertexData();
-					vd.pos = pos3;
-					vd.uv = uv;
-					vertices[vertexIndex] = vd;
-
-					if ((vertexIndex * 6) < indices.Length)
-					{
-						uint p1 = (uint)gIndex;
-						uint p2 = ((uint)gIndex + 1);
-						uint p3 = ((uint)gIndex + (uint)count.x);
-						uint p4 = ((uint)gIndex + (uint)count.x + 1);
-						indices[(vertexIndex * 6) + 0] = p1;
-						indices[(vertexIndex * 6) + 1] = p3;
-						indices[(vertexIndex * 6) + 2] = p2;
-						indices[(vertexIndex * 6) + 3] = p2;
-						indices[(vertexIndex * 6) + 4] = p3;
-						indices[(vertexIndex * 6) + 5] = p4;
-					}
-				}
+				var height = Utils.SampleColorFromNativeArray(uv, heightData, textureSize);
+				Vector3 pos3 = new Vector3(pos.x, height.r / (255f) * heightScale, pos.y);
+				VertexData vd = new VertexData();
+				vd.pos = pos3;
+				vd.uv = uv;
+				vertices[vertexIndex] = vd;
 			}
 		}
 
-		private static VertexData ComputeVertexData(int i, Vector2Int verticeCount, Vector2 size, float heightScale, NativeArray<Color32> heightMapData, Vector2Int pixelCount)
+		private struct IndicesJob : IJobParallelFor
 		{
-			Vector2Int idx = Utils.GetXYFromIndex(i, verticeCount.x);
-			Vector2 fCount = verticeCount;
-			Vector2 uv = idx / fCount;
+			[NativeDisableContainerSafetyRestriction]
+			public NativeArray<uint> indices;
+			[ReadOnly] public Vector2Int count;
 
-
-			Color32 color = Utils.SampleColorFromNativeArray(uv, heightMapData, pixelCount);
-			Vector2 pos = uv * size;
-			Vector3 pos3 = new Vector3(pos.x, color.r * heightScale, pos.y);
-			VertexData vd = new VertexData();
-			vd.pos = pos3;
-			vd.uv = uv;
-			return vd;
-		}
-
-		struct RGB {
-			public byte r;
-			public byte g;
-			public byte b;
+			public void Execute(int triangleIndex)
+			{
+				if (triangleIndex % 2 == 0)
+				{
+					int vertexIndex = triangleIndex / 2;
+					uint p1 = (uint)vertexIndex;
+					uint p2 = ((uint)vertexIndex + 1);
+					uint p3 = ((uint)vertexIndex + (uint)count.x);
+					indices[(vertexIndex * 6) + 0] = p1;
+					indices[(vertexIndex * 6) + 1] = p3;
+					indices[(vertexIndex * 6) + 2] = p2;
+				}
+				else
+				{
+					int vertexIndex = (triangleIndex - 1) / 2;
+					uint p2 = ((uint)vertexIndex + 1);
+					uint p3 = ((uint)vertexIndex + (uint)count.x);
+					uint p4 = ((uint)vertexIndex + (uint)count.x + 1);
+					indices[(vertexIndex * 6) + 3] = p2;
+					indices[(vertexIndex * 6) + 4] = p3;
+					indices[(vertexIndex * 6) + 5] = p4;
+				}
+			}
 		}
 
 		public void CreateMesh()
@@ -116,45 +112,28 @@ namespace _018_TerraGenCPU_MeshThread
 				return;
 			}
 
-			int jobsCount = JobsUtility.JobWorkerMaximumCount;
-
 			var verticesCount = count.x * count.y;
-			var indicesCount = (count.x - 1) * (count.y - 1) * 2 * 3;
-			int verticesCountPartial = verticesCount / jobsCount;			
-			int indicesCountPartial = indicesCount / jobsCount;
+			var trianglesCount = (count.x - 1) * (count.y - 1) * 2;
+			var indicesCount = trianglesCount * 3;
 
-			Debug.Log($"jobsCount:{jobsCount} indicesCountPartial:{indicesCountPartial} verticesCountPartial:{verticesCountPartial}");
+			VerticesJob verticesJob;
+			verticesJob.vertices = new NativeArray<VertexData>(verticesCount, Allocator.TempJob);;
+			verticesJob.heightData = heightData;
+			verticesJob.count = count;
+			verticesJob.size = size;
+			verticesJob.textureSize = textureSize;
+			verticesJob.heightScale = heightScale;
 
-			MeshJob[] jobArray = new MeshJob[jobsCount];
-			JobHandle[] jobHandleArray = new JobHandle[jobsCount];
-			int offset = 0;
-			for (int j = 0; j < jobsCount; ++j)
-			{
-				if (j == jobsCount-1)
-				{
-					verticesCountPartial += verticesCount % jobsCount;
-					indicesCountPartial += indicesCount % jobsCount;
-				}
-				MeshJob job;
-				job.vertices = new NativeArray<VertexData>(verticesCountPartial, Allocator.TempJob);;
-				job.indices = new NativeArray<uint>(indicesCountPartial, Allocator.TempJob);
-				job.heightData = heightData;
-				job.count = count;
-				job.size = size;
-				job.textureSize = textureSize;
-				job.heightScale = heightScale;
-				job.offset = offset;
-				jobHandleArray[j] = job.Schedule();
+			IndicesJob indicesJob;
+			indicesJob.indices = new NativeArray<uint>(indicesCount, Allocator.TempJob);
+			indicesJob.count = count;
 
-				jobArray[j] = job;
+			JobHandle verticesJobHandle = verticesJob.Schedule(verticesCount, 64);
+			JobHandle indicesJobHandle = indicesJob.Schedule(trianglesCount, 64);
 
-				offset += verticesCountPartial;
-			}
-
-			for (int j = 0; j < jobsCount; ++j)
-			{
-				jobHandleArray[j].Complete();
-			}
+			indicesJobHandle.Complete();
+			verticesJobHandle.Complete();
+			Debug.Log($"job complete time:{sw.ElapsedMilliseconds}ms");
 
 			MeshFilter meshFilter = gameObject.GetComponent<MeshFilter>();
 
@@ -165,33 +144,20 @@ namespace _018_TerraGenCPU_MeshThread
 			var updateFlags = MeshUpdateFlags.DontNotifyMeshUsers | MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontResetBoneBounds | MeshUpdateFlags.DontValidateIndices;
 			mesh.SetVertexBufferParams(verticesCount, vertexLayout);
 			mesh.SetIndexBufferParams(indicesCount, IndexFormat.UInt32);
-			int meshVerticesStart = 0;
-			int meshIndicesStart = 0;
-			for (int j = 0; j < jobsCount; ++j)
-			{
-				var job = jobArray[j];
-
-				mesh.SetVertexBufferData(job.vertices, 0, meshVerticesStart, job.vertices.Length, 0, updateFlags);
-				mesh.SetIndexBufferData(job.indices, 0, meshIndicesStart, job.indices.Length, updateFlags);
-
-				meshVerticesStart += job.vertices.Length;
-				meshIndicesStart += job.indices.Length;
-			}
+			mesh.SetVertexBufferData(verticesJob.vertices, 0, 0, verticesJob.vertices.Length, 0, updateFlags);
+			Debug.Log($"SetVertexBufferData time:{sw.ElapsedMilliseconds}ms");
+			mesh.SetIndexBufferData(indicesJob.indices, 0, 0, indicesJob.indices.Length, updateFlags);
+			Debug.Log($"SetIndexBufferData time:{sw.ElapsedMilliseconds}ms");
 			mesh.subMeshCount = 1;
 			mesh.SetSubMesh(0, new SubMeshDescriptor(0, indicesCount, MeshTopology.Triangles));
-			mesh.RecalculateBounds(); 
+			mesh.RecalculateBounds();
+			Debug.Log($"RecalculateBounds time:{sw.ElapsedMilliseconds}ms");
 
 			meshFilter.mesh = mesh;
 
-			for (int j = 0; j < jobsCount; ++j)
-			{
-				var job = jobArray[j];
-				if (job.indices.IsCreated)
-					job.indices.Dispose();
-				if (job.vertices.IsCreated)
-					job.vertices.Dispose();
-
-			}
+			verticesJob.vertices.Dispose();
+			indicesJob.indices.Dispose();
+			
 			Debug.Log($"creation time:{sw.ElapsedMilliseconds}ms");
 		}
 	}
