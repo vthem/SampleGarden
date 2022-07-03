@@ -1,5 +1,5 @@
-using System.Collections;
 using System.Collections.Generic;
+
 using UnityEngine;
 
 namespace _019_EarthMap
@@ -17,6 +17,16 @@ namespace _019_EarthMap
 			float max = Mathf.Pow(2f, zoom + 1f);
 			return new Vector2(index.x / max, index.y / max);
 		}
+
+		public static Vector2 UVTileRoundGap(Vector2 uv, int zoom)
+		{
+			var index = FloorUVToIndex(uv, zoom);
+			var roundedUV = IndexToUV(index, zoom);
+			var gap = uv - roundedUV;
+			float max = Mathf.Pow(2f, zoom + 1f);
+			var tileSize = 1 / max;
+			return gap / tileSize;
+		}
 	}
 
 	public class TileManager_MonoBehaviour : MonoBehaviour
@@ -30,8 +40,7 @@ namespace _019_EarthMap
 
 		private Vector2 uv;
 		private int zoom;
-
-		Dictionary<Vector2Int, Tile_MonoBehaviour> tiles = new Dictionary<Vector2Int, Tile_MonoBehaviour>();
+		private readonly Dictionary<Vector2Int, Tile_MonoBehaviour> tiles = new Dictionary<Vector2Int, Tile_MonoBehaviour>();
 
 		private void Awake()
 		{
@@ -40,7 +49,7 @@ namespace _019_EarthMap
 			zoom = startZoom;
 		}
 
-		void Update()
+		private void Update()
 		{
 			Vector2Int firstIndex = TileUtils.FloorUVToIndex(uv, zoom);
 
@@ -62,12 +71,12 @@ namespace _019_EarthMap
 			}
 		}
 
-		Tile_MonoBehaviour CreateTile(Vector2Int index, string name)
+		private Tile_MonoBehaviour CreateTile(Vector2Int index, string name)
 		{
-			var tileObj = GameObject.Instantiate(tileTemplate);
+			GameObject tileObj = GameObject.Instantiate(tileTemplate);
 			tileObj.SetActive(true);
 			tileObj.name = name;
-			var tile = tileObj.GetComponent<Tile_MonoBehaviour>();
+			Tile_MonoBehaviour tile = tileObj.GetComponent<Tile_MonoBehaviour>();
 			tile.zoom = zoom;
 			tile.x = index.x;
 			tile.y = index.y;
