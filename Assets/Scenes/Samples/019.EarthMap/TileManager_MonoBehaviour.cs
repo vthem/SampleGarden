@@ -4,48 +4,75 @@ using UnityEngine;
 
 namespace _019_EarthMap
 {
+	public class TileUtils
+	{
+		public static Vector2Int FloorUVToIndex(Vector2 uv, int zoom)
+		{
+			float max = Mathf.Pow(2f, zoom + 1f);
+			return new Vector2Int(Mathf.FloorToInt(uv.x * max), Mathf.FloorToInt(uv.y * max));
+		}
+
+		public static Vector2 IndexToUV(Vector2Int index, int zoom)
+		{
+			float max = Mathf.Pow(2f, zoom + 1f);
+			return new Vector2(index.x / max, index.y / max);
+		}
+	}
+
 	public class TileManager_MonoBehaviour : MonoBehaviour
 	{
 		public Vector2Int tileCount = new Vector2Int(2, 2);
 
-		public int zoom = 11;
-		public int x = 1017;
-		public int y = 739;
+		public int startZoom = 11;
+		public Vector2Int startIndex = new Vector2Int(1017, 739);
 
 		public GameObject tileTemplate;
 
-		public float u = 0f;
-		public float v = 0f;
+		private Vector2 uv;
+		private int zoom;
+
+		Dictionary<Vector2Int, Tile_MonoBehaviour> tiles = new Dictionary<Vector2Int, Tile_MonoBehaviour>();
 
 		private void Awake()
 		{
 			tileTemplate.SetActive(false);
+			uv = TileUtils.IndexToUV(startIndex, startZoom);
+			zoom = startZoom;
 		}
 
-		// Start is called before the first frame update
-		void Start()
+		void Update()
 		{
+			Vector2Int firstIndex = TileUtils.FloorUVToIndex(uv, zoom);
+
+			int arrayIndex = 0;
 			for (int i = 0; i < tileCount.x; ++i)
 			{
 				for (int j = 0; j < tileCount.y; ++j)
 				{
-					var newTile = GameObject.Instantiate(tileTemplate);
-					newTile.SetActive(true);
-					var tile = newTile.GetComponent<Tile_MonoBehaviour>();
-					tile.zoom = zoom;
-					tile.x = x + i;
-					tile.y = y + j;
+					Vector2Int indexOffset = new Vector2Int(i, j);
+					Tile_MonoBehaviour tile;
+					if (!tiles.TryGetValue(firstIndex + indexOffset, out tile))
+					{
+						tile = CreateTile(firstIndex + indexOffset, $"tile[{arrayIndex}]");
+					}
 					tile.transform.localPosition = new Vector3(i, 0, -j);
+
+					arrayIndex++;
 				}
 			}
 		}
 
-		// Update is called once per frame
-		void Update()
+		Tile_MonoBehaviour CreateTile(Vector2Int index, string name)
 		{
-			float max = Mathf.Pow(2f, zoom + 1f);
-			u = x / max;
-			v = y / max;
+			var tileObj = GameObject.Instantiate(tileTemplate);
+			tileObj.SetActive(true);
+			tileObj.name = name;
+			var tile = tileObj.GetComponent<Tile_MonoBehaviour>();
+			tile.zoom = zoom;
+			tile.x = index.x;
+			tile.y = index.y;
+			tile.transform.SetParent(transform);
+			return tile;
 		}
 	}
 }
