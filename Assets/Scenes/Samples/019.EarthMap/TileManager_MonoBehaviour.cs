@@ -40,12 +40,14 @@ namespace _019_EarthMap
 
 	struct TilePosition
 	{
-		public Vector2Int index;
-		public int zoom;
-		public Vector2 offset;
+		public Vector2Int Index { get => index; }
+		public int Zoom { get => zoom; }
+
+		private Vector2Int index;
+		private int zoom;
 	}
 
-	struct TileUV
+	struct TileUV // should use Vector2d
 	{
 		public double u;
 		public double v;
