@@ -1,20 +1,28 @@
 using System.Collections.Generic;
 
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace _019_EarthMap
 {
 	public class TileUtils
 	{
+		public static float TileCount(int zoom)
+		{
+			return Mathf.Pow(2f, zoom + 1f);
+		}
+
 		public static Vector2Int FloorUVToIndex(Vector2 uv, int zoom)
 		{
-			float max = Mathf.Pow(2f, zoom + 1f);
+			float max = TileCount(zoom);
 			return new Vector2Int(Mathf.FloorToInt(uv.x * max), Mathf.FloorToInt(uv.y * max));
 		}
 
 		public static Vector2 IndexToUV(Vector2Int index, int zoom)
 		{
-			float max = Mathf.Pow(2f, zoom + 1f);
+			float max = TileCount(zoom);
 			return new Vector2(index.x / max, index.y / max);
 		}
 
@@ -23,30 +31,35 @@ namespace _019_EarthMap
 			var index = FloorUVToIndex(uv, zoom);
 			var roundedUV = IndexToUV(index, zoom);
 			var gap = uv - roundedUV;
-			float max = Mathf.Pow(2f, zoom + 1f);
+			float max = TileCount(zoom);
 			var tileSize = 1 / max;
-			return gap / tileSize;
+			return gap * tileSize;
 		}
 	}
 
 	public class TileManager_MonoBehaviour : MonoBehaviour
 	{
-		public Vector2Int tileCount = new Vector2Int(2, 2);
+		public Vector2Int tileCountXY = new Vector2Int(2, 2);
 
-		public int startZoom = 11;
+		public int zoom = 11;
 		public Vector2Int startIndex = new Vector2Int(1017, 739);
 
 		public GameObject tileTemplate;
 
 		private Vector2 uv;
-		private int zoom;
 		private readonly Dictionary<Vector2Int, Tile_MonoBehaviour> tiles = new Dictionary<Vector2Int, Tile_MonoBehaviour>();
+
+		public Vector2 UpdateUV()
+		{
+			uv = TileUtils.IndexToUV(startIndex, zoom);
+			return uv;
+		}
 
 		private void Awake()
 		{
 			tileTemplate.SetActive(false);
-			uv = TileUtils.IndexToUV(startIndex, startZoom);
-			zoom = startZoom;
+			UpdateUV();
+			zoom = zoom;
 		}
 
 		private void Update()
@@ -54,9 +67,9 @@ namespace _019_EarthMap
 			Vector2Int firstIndex = TileUtils.FloorUVToIndex(uv, zoom);
 
 			int arrayIndex = 0;
-			for (int i = 0; i < tileCount.x; ++i)
+			for (int i = 0; i < tileCountXY.x; ++i)
 			{
-				for (int j = 0; j < tileCount.y; ++j)
+				for (int j = 0; j < tileCountXY.y; ++j)
 				{
 					Vector2Int indexOffset = new Vector2Int(i, j);
 					Tile_MonoBehaviour tile;
@@ -84,4 +97,30 @@ namespace _019_EarthMap
 			return tile;
 		}
 	}
+
+
+#if UNITY_EDITOR
+	[CustomEditor(typeof(TileManager_MonoBehaviour))]
+	public class TerraGenCPU_MeshGen_Editor : Editor
+	{
+		public override void OnInspectorGUI()
+		{
+			DrawDefaultInspector();
+
+			var mono = target as TileManager_MonoBehaviour;
+			var uv = mono.UpdateUV();
+			EditorGUILayout.LabelField($"uv.x:{uv.x}");
+			EditorGUILayout.LabelField($"uv.y:{uv.y}");
+
+			if (GUILayout.Button("+u.x"))
+			{
+				uv.x += .1f / TileUtils.TileCount(mono.zoom);
+			}
+			if (GUILayout.Button("-u.x"))
+			{
+				uv.x -= .1f / TileUtils.TileCount(mono.zoom);
+			}
+		}
+	}
+#endif
 }
