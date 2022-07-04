@@ -8,7 +8,7 @@ namespace _019_EarthMap {
 	public class Tile_MonoBehaviour : MonoBehaviour
 	{
 		public string apiKey = "e5e7c9f4fdca44c0a925f3af8cbd58fe";
-		public string URL = "https://b.tile.thunderforest.com/outdoors/__zoom__/__x__/__y__.png?apiKey=__key__";
+		public string URL = "https://b.tile.thunderforest.com/outdoors/__zoom__/__x__/__y__.png?apikey=__key__";
 
 		public int zoom = 11;
 		public int x = 1017;

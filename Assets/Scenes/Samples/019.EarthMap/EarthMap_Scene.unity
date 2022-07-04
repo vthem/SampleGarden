@@ -272,7 +272,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   apiKey: e5e7c9f4fdca44c0a925f3af8cbd58fe
-  URL: https://b.tile.thunderforest.com/outdoors/__zoom__/__x__/__y__.png?apiKey=__key__
+  URL: https://b.tile.thunderforest.com/outdoors/__zoom__/__x__/__y__.png?apikey=__key__
   zoom: 11
   x: 1017
   y: 739
@@ -384,7 +384,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8bea4c1a2d9e2bb459cb8253eb2848e0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tileCount: {x: 6, y: 6}
-  startZoom: 11
-  startIndex: {x: 1017, y: 739}
+  tileCountXY: {x: 2, y: 2}
+  zoom: 11
+  index: {x: 1017, y: 739}
   tileTemplate: {fileID: 980580351}
+  uv: {x: 0.24829102, y: 0.18041992}
