@@ -16,8 +16,10 @@ namespace _019_EarthMap {
 
 		public bool forceGet = false;
 
+		public bool Keep { get; set; } = false;
+
 		public Texture2D texture = null;
-		private Coroutine getRoutine;
+		private Coroutine getRoutine;	
 
 
 		// Start is called before the first frame update

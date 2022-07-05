@@ -63,17 +63,18 @@ namespace _019_EarthMap
 		public GameObject tileTemplate;
 
 		public Vector2 uv;
-		private readonly Dictionary<Vector2Int, Tile_MonoBehaviour> tiles = new Dictionary<Vector2Int, Tile_MonoBehaviour>();
+		private List<Vector2Int> tileToRemoveArray = new List<Vector2Int>(16);
+		private readonly Dictionary<Vector2Int, Tile_MonoBehaviour> tilesMap = new Dictionary<Vector2Int, Tile_MonoBehaviour>();
 
 		private void Awake()
 		{
 			tileTemplate.SetActive(false);
 		}
 
-		private void Update()
+		public void Update()
 		{
 			Vector2Int firstIndex = TileUtils.FloorUVToIndex(uv, zoom);
-
+			Debug.Log($"firstIndex:{firstIndex}");
 			int arrayIndex = 0;
 			for (int i = 0; i < tileCountXY.x; ++i)
 			{
@@ -82,17 +83,37 @@ namespace _019_EarthMap
 					Vector2Int indexOffset = new Vector2Int(i, j);
 					Tile_MonoBehaviour tile;
 					var key = firstIndex + indexOffset;
-					if (!tiles.TryGetValue(key, out tile))
+					if (!tilesMap.TryGetValue(key, out tile))
 					{
 						tile = CreateTile(key, $"tile[{arrayIndex}]");
-						tiles[key] = tile;
+						tilesMap[key] = tile;
 					}
 					var posOffset = TileUtils.TileOffsetFromUV(uv, zoom);
-					tile.transform.localPosition = new Vector3(i + posOffset.x, 0, -j + posOffset.y);
+					tile.transform.localPosition = new Vector3(i - posOffset.x, 0, -j + posOffset.y);
+					tile.Keep = true;
 
 					arrayIndex++;
 				}
+			}			
+			foreach (var kv in tilesMap) {
+				if (kv.Value.Keep)
+				{
+					kv.Value.Keep = false;
+					continue;
+				}
+				tileToRemoveArray.Add(kv.Key);
 			}
+
+			foreach (var tileToRemove in tileToRemoveArray)
+			{
+				Tile_MonoBehaviour tile;
+				if (tilesMap.TryGetValue(tileToRemove, out tile))
+				{
+					Destroy(tile.gameObject);
+					tilesMap.Remove(tileToRemove);
+				}
+			}
+			tileToRemoveArray.Clear();
 		}
 
 		private Tile_MonoBehaviour CreateTile(Vector2Int index, string name)
@@ -118,39 +139,43 @@ namespace _019_EarthMap
 		{
 			DrawDefaultInspector();
 
-			var tile = target as TileManager_MonoBehaviour;
+			var mgr = target as TileManager_MonoBehaviour;
 			if (GUILayout.Button("Compute UV from index"))
 			{
-				tile.uv = TileUtils.IndexToUV(tile.index, tile.zoom);
+				mgr.uv = TileUtils.IndexToUV(mgr.index, mgr.zoom);
 			}
-			var step = .1f / TileUtils.TileCount(tile.zoom);
+			var step = .1f / TileUtils.TileCount(mgr.zoom);
 			EditorGUILayout.LabelField($"step:{step:F8}");
 
-			var uv = tile.uv;
+			var uv = mgr.uv;
 			EditorGUILayout.LabelField($"uv.x:{uv.x:F8}");
 			EditorGUILayout.LabelField($"uv.y:{uv.y:F8}");
 
-			var offset = TileUtils.TileOffsetFromUV(uv, tile.zoom);
+			var offset = TileUtils.TileOffsetFromUV(uv, mgr.zoom);
 			EditorGUILayout.LabelField($"offset.xy:{offset.x:F8},{offset.y:F8}");
 
 			if (GUILayout.Button("+u.x"))
 			{
-				uv.x += .1f / TileUtils.TileCount(tile.zoom);
+				uv.x += .1f / TileUtils.TileCount(mgr.zoom);
 			}
 			if (GUILayout.Button("-u.x"))
 			{
-				uv.x -= .1f / TileUtils.TileCount(tile.zoom);
+				uv.x -= .1f / TileUtils.TileCount(mgr.zoom);
 			}
 			if (GUILayout.Button("+u.y"))
 			{
-				uv.y += .1f / TileUtils.TileCount(tile.zoom);
+				uv.y += .1f / TileUtils.TileCount(mgr.zoom);
 			}
 			if (GUILayout.Button("-u.y"))
 			{
-				uv.y -= .1f / TileUtils.TileCount(tile.zoom);
+				uv.y -= .1f / TileUtils.TileCount(mgr.zoom);
+			}
+			if (GUILayout.Button("ForceUpdate"))
+			{
+				//mgr.ForceUpdate();
 			}
 
-			tile.uv = uv;
+			mgr.uv = uv;
 		}
 	}
 #endif
