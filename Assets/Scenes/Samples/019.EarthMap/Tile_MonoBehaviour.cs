@@ -3,7 +3,18 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.Networking;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 namespace _019_EarthMap {
+
+	[System.Serializable]
+	public struct Vector2d
+	{
+		public double x;
+		public double y;
+	}
 
 	public class Tile_MonoBehaviour : MonoBehaviour
 	{
@@ -11,8 +22,9 @@ namespace _019_EarthMap {
 		public string URL = "https://b.tile.thunderforest.com/outdoors/__zoom__/__x__/__y__.png?apikey=__key__";
 
 		public int zoom = 11;
-		public int x = 1017;
-		public int y = 739;
+		public Vector2Int index = new Vector2Int(1017, 739);
+		public bool useUV = false;
+		public Vector2 uv;
 
 		public bool forceGet = false;
 
@@ -67,11 +79,30 @@ namespace _019_EarthMap {
 		{
 			string u = URL;
 			u = u.Replace("__zoom__", zoom.ToString());
-			u = u.Replace("__x__", x.ToString());
-			u = u.Replace("__y__", y.ToString());
+			if (useUV)
+			{
+				index = TileUtils.FloorUVToIndex(uv, zoom);
+			}
+			u = u.Replace("__x__", index.x.ToString());
+			u = u.Replace("__y__", index.y.ToString());
 			u = u.Replace("__key__", apiKey);
 			return u;
 		}
 	}
+#if UNITY_EDITOR
+	[CustomEditor(typeof(Tile_MonoBehaviour))]
+	public class Tile_Editor : Editor
+	{
+		public override void OnInspectorGUI()
+		{
+			DrawDefaultInspector();
 
+			var tile = target as Tile_MonoBehaviour;
+			if (GUILayout.Button("Compute UV from index"))
+			{
+				tile.uv = TileUtils.IndexToUV(tile.index, tile.zoom);
+			}
+		}
+	}
+#endif
 }

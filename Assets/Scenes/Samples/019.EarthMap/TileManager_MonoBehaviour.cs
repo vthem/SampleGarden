@@ -23,7 +23,7 @@ namespace _019_EarthMap
 		public static Vector2 IndexToUV(Vector2Int index, int zoom)
 		{
 			float max = TileCount(zoom);
-			return new Vector2(index.x / max, index.y / max);
+			return new Vector2((index.x / max) + (1 / (2 * max)), (index.y / max) + (1 / (2 * max)));
 		}
 
 		public static Vector2 TileOffsetFromUV(Vector2 uv, int zoom)
@@ -123,8 +123,7 @@ namespace _019_EarthMap
 			tileObj.name = name;
 			Tile_MonoBehaviour tile = tileObj.GetComponent<Tile_MonoBehaviour>();
 			tile.zoom = zoom;
-			tile.x = index.x;
-			tile.y = index.y;
+			tile.index = index;
 			tile.transform.SetParent(transform);
 			return tile;
 		}
@@ -133,7 +132,7 @@ namespace _019_EarthMap
 
 #if UNITY_EDITOR
 	[CustomEditor(typeof(TileManager_MonoBehaviour))]
-	public class TerraGenCPU_MeshGen_Editor : Editor
+	public class TileManager_Editor : Editor
 	{
 		public override void OnInspectorGUI()
 		{
