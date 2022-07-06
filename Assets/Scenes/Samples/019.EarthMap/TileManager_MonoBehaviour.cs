@@ -20,6 +20,14 @@ namespace _019_EarthMap
 			return new Vector2Int(Mathf.FloorToInt(uv.x * max), Mathf.FloorToInt(uv.y * max));
 		}
 
+		public static Vector2Int WrapIndex(Vector2Int index, int zoom)
+		{
+			int max = Mathf.RoundToInt(TileCount(zoom));
+			index.x = index.x.Modulo(max);
+			index.y = index.y.Modulo(max);
+			return index;
+		}
+
 		public static Vector2 IndexToUV(Vector2Int index, int zoom)
 		{
 			float max = TileCount(zoom);
@@ -55,26 +63,33 @@ namespace _019_EarthMap
 
 	public class TileManager_MonoBehaviour : MonoBehaviour
 	{
+		public GameObject tileTemplate;
 		public Vector2Int tileCountXY = new Vector2Int(2, 2);
-
 		public int zoom = 11;
 		public Vector2Int index = new Vector2Int(1017, 739);
-
-		public GameObject tileTemplate;
-
 		public Vector2 uv;
+		
 		private List<Vector2Int> tileToRemoveArray = new List<Vector2Int>(16);
 		private readonly Dictionary<Vector2Int, Tile_MonoBehaviour> tilesMap = new Dictionary<Vector2Int, Tile_MonoBehaviour>();
 
 		private void Awake()
 		{
 			tileTemplate.SetActive(false);
+			if (tileCountXY.x % 2 != 0 || tileCountXY.y % 2 != 0)
+			{
+				Debug.LogError("tileCountXY must be a multiple of 2");
+				enabled = false;
+			}
 		}
 
 		public void Update()
 		{
-			Vector2Int firstIndex = TileUtils.FloorUVToIndex(uv, zoom);
-			Debug.Log($"firstIndex:{firstIndex}");
+
+			Vector2Int middleIndex = TileUtils.FloorUVToIndex(uv, zoom);
+			Vector2Int firstIndex = middleIndex - tileCountXY / 2;
+
+			Debug.Log($"centerIndex:{firstIndex} middleIndex:{middleIndex}");
+			
 			int arrayIndex = 0;
 			for (int i = 0; i < tileCountXY.x; ++i)
 			{
@@ -83,13 +98,14 @@ namespace _019_EarthMap
 					Vector2Int indexOffset = new Vector2Int(i, j);
 					Tile_MonoBehaviour tile;
 					var key = firstIndex + indexOffset;
+					key = TileUtils.WrapIndex(key, zoom);
 					if (!tilesMap.TryGetValue(key, out tile))
 					{
 						tile = CreateTile(key, $"tile[{arrayIndex}]");
 						tilesMap[key] = tile;
 					}
 					var posOffset = TileUtils.TileOffsetFromUV(uv, zoom);
-					tile.transform.localPosition = new Vector3(i - posOffset.x, 0, -j + posOffset.y);
+					tile.transform.localPosition = new Vector3(i - posOffset.x, 0, -j + posOffset.y) - new Vector3(tileCountXY.x, 0, -tileCountXY.y) * .5f;
 					tile.Keep = true;
 
 					arrayIndex++;
@@ -169,6 +185,15 @@ namespace _019_EarthMap
 			{
 				uv.y -= .1f / TileUtils.TileCount(mgr.zoom);
 			}
+			if (GUILayout.Button("zoom+"))
+			{
+				mgr.zoom += 1;				
+			}
+			if (GUILayout.Button("zoom-"))
+			{
+				mgr.zoom -= 1;
+			}
+			mgr.zoom = Mathf.Clamp(mgr.zoom, 0, 22);
 			if (GUILayout.Button("ForceUpdate"))
 			{
 				//mgr.ForceUpdate();

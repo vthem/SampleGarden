@@ -139,7 +139,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &14302241
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -374,8 +374,9 @@ MonoBehaviour:
   apiKey: e5e7c9f4fdca44c0a925f3af8cbd58fe
   URL: https://b.tile.thunderforest.com/outdoors/__zoom__/__x__/__y__.png?apikey=__key__
   zoom: 11
-  x: 1017
-  y: 739
+  index: {x: 1017, y: 739}
+  useUV: 0
+  uv: {x: 0, y: 0}
   forceGet: 0
   texture: {fileID: 0}
 --- !u!23 &980580353
@@ -484,8 +485,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8bea4c1a2d9e2bb459cb8253eb2848e0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  tileTemplate: {fileID: 980580351}
   tileCountXY: {x: 6, y: 6}
   zoom: 11
   index: {x: 1017, y: 739}
-  tileTemplate: {fileID: 980580351}
   uv: {x: 0.24829102, y: 0.18041992}
