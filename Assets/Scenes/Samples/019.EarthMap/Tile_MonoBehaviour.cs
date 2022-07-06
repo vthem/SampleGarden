@@ -2,20 +2,135 @@ using System.Collections;
 
 using UnityEngine;
 using UnityEngine.Networking;
+using System.IO;
 
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
 namespace _019_EarthMap {
-
-	[System.Serializable]
-	public struct Vector2d
+#if false
+	internal class TileCache : CustomYieldInstruction
 	{
-		public double x;
-		public double y;
+		public string URL { get; private set; } = string.Empty;
+
+		public bool IsValid { get; private set; } = false;
+
+		public override bool keepWaiting => false;
+
+		public TileCache(Vector2Int index, int zoom)
+		{
+			// read cache should be async
+			var path = Path.Combine(Application.dataPath, "TileCache");
+			path = Path.Combine(path, $"{index.x}.{index.y}.{zoom}.png");
+			if (File.Exists(path))
+			{
+				var uri = new System.Uri(path);
+				URL = uri.AbsoluteUri;
+				IsValid = true;
+			}
+		}
+
+		public static void Save(Vector2Int index, int zoom, Texture2D texture)
+		{
+			//then Save To Disk as PNG
+			byte[] bytes = texture.EncodeToPNG();
+			var dirPath = Application.dataPath + "/../SaveImages/";
+			if (!Directory.Exists(dirPath))
+			{
+				Directory.CreateDirectory(dirPath);
+			}
+			File.WriteAllBytes(GetPath(index, zoom), bytes);
+		}
+
+		public static string GetPath(Vector2Int index, int zoom)
+		{
+			var path = Path.Combine(Application.dataPath, "TileCache");
+			return Path.Combine(path, $"{index.x}.{index.y}.{zoom}.png");
+		}
 	}
 
+
+	internal class TileDownloader : IEnumerator
+	{
+		private enum State
+		{
+			None = -1,
+			ReadCache,
+			Download
+		}
+
+		private readonly int zoom = 11;
+		private Vector2Int index = new Vector2Int(1017, 739);
+		private State state = State.None;
+		private TileCache cache;
+		private UnityWebRequest www;
+		private UnityWebRequestAsyncOperation wwwOp;
+
+		IEnumerator Run()
+		{
+			switch (state)
+			{
+				case State.None:
+					yield return null;
+					break;
+				case State.ReadCache:
+					yield return cache;
+					break;
+				case State.Download:
+					yield return wwwOp;
+					break;
+			}
+			yield return null;
+		}
+
+		public override bool keepWaiting
+		{
+			get
+			{
+				switch (state)
+				{
+					case State.None:
+						return false;
+					case State.ReadCache:
+						if (!cache.keepWaiting)
+						{
+							state = State.Download;
+							string url = BuildURL();
+							www = UnityWebRequestTexture.GetTexture(url);
+							wwwOp = www.SendWebRequest();
+							return true;
+						}
+						return true;
+					case State.Download:
+						return wwwOp.c
+				}
+				return false;
+			}
+		}
+
+		public object Current => throw new System.NotImplementedException();
+
+		public void Reset() { }
+
+		public TileDownloader(Vector2Int index, int zoom)
+		{
+			// read cache should be async
+			cache = new TileCache(index, zoom);
+			state = State.ReadCache;
+		}
+
+		private string BuildURL()
+		{
+			return $"https://b.tile.thunderforest.com/outdoors/{zoom}/{index.x}/{index.y}.png?apikey=e5e7c9f4fdca44c0a925f3af8cbd58fe";
+		}
+
+		public bool MoveNext()
+		{
+			throw new System.NotImplementedException();
+		}
+	}
+#endif
 	public class Tile_MonoBehaviour : MonoBehaviour
 	{
 		public string apiKey = "e5e7c9f4fdca44c0a925f3af8cbd58fe";
