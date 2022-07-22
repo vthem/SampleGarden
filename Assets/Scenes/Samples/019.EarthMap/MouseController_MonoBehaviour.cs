@@ -13,7 +13,15 @@ public class MouseController_MonoBehaviour : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        Debug.Log($"mouse:{Input.mousePosition}");
+		RaycastHit hit;
+		Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 
+		if (Physics.Raycast(ray, out hit))
+		{
+			Transform objectHit = hit.transform;
+			Debug.Log($"mouse:{Input.mousePosition} hit:{objectHit.name}");
+
+			// Do something with the object that was hit by the raycast.
+		}
 	}
 }
