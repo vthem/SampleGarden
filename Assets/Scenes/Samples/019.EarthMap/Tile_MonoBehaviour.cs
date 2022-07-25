@@ -136,8 +136,7 @@ namespace _019_EarthMap {
 		public string apiKey = "e5e7c9f4fdca44c0a925f3af8cbd58fe";
 		public string URL = "https://b.tile.thunderforest.com/outdoors/__zoom__/__x__/__y__.png?apikey=__key__";
 
-		public int zoom = 11;
-		public Vector2Int index = new Vector2Int(1017, 739);
+		public Vector3Int index = new Vector3Int(1017, 739, 11);
 		public bool useUV = false;
 		public Vector2 uv;
 
@@ -193,10 +192,10 @@ namespace _019_EarthMap {
 		private string BuilURL()
 		{
 			string u = URL;
-			u = u.Replace("__zoom__", zoom.ToString());
+			u = u.Replace("__zoom__", index.z.ToString());
 			if (useUV)
 			{
-				index = TileUtils.FloorUVToIndex(uv, zoom);
+				index = TileUtils.FloorUVToIndex(uv, index.z);
 			}
 			u = u.Replace("__x__", index.x.ToString());
 			u = u.Replace("__y__", index.y.ToString());
@@ -215,7 +214,7 @@ namespace _019_EarthMap {
 			var tile = target as Tile_MonoBehaviour;
 			if (GUILayout.Button("Compute UV from index"))
 			{
-				tile.uv = TileUtils.IndexToUV(tile.index, tile.zoom);
+				tile.uv = TileUtils.IndexToUV(tile.index);
 			}
 		}
 	}
