@@ -47,18 +47,34 @@ namespace _019_EarthMap
 
 		public static Vector3 IndexToWorld(Vector3Int index, MapViewport viewport)
 		{
-			Vector3Int centerIndex = FloorUVToIndex(viewport.uv.center, index.z);
+			Vector3Int centerIndex = FloorUVToIndex(viewport.rectUV.center, index.z);
 			Vector3 pos = new Vector3(index.x - centerIndex.x, 0f, index.y - centerIndex.y);
 			pos.x = pos.x * viewport.TileScale * viewport.tileSize;
 			pos.y = pos.y * viewport.TileScale * viewport.tileSize;
 			return pos;
+		}
+
+		public static bool UVToWorld(Vector2 uvPoint, MapViewport viewport, out Vector3 pos)
+		{
+			if (!viewport.rectUV.ContainsPoint(uvPoint))
+			{
+				pos = Vector3.zero;
+				return false;
+			}
+			Vector2 uv;
+
+			uv.x = Mathf.InverseLerp(viewport.rectUV.xMin, viewport.rectUV.xMax, uvPoint.x);
+			uv.y = Mathf.InverseLerp(viewport.rectUV.yMin, viewport.rectUV.yMax, uvPoint.y);
+
+			pos = new Vector3(viewport.tileSize * viewport.InnerTileCount.x * uv.x, 0, viewport.tileSize * viewport.InnerTileCount.y * uv.y);
+			return true;
 		}
 	}
 
 	[System.Serializable]
 	public struct MapViewport
 	{
-		public Rect uv;
+		public Rect rectUV;
 		public int pixelCount;
 		public int pixelPerTile;
 		public float tileSize;
@@ -66,13 +82,15 @@ namespace _019_EarthMap
 		public int ZMin{ get; private set; }
 		public float Z { get; private set; }
 
+		public Vector2Int InnerTileCount => Vector2Int.one * (pixelCount / pixelPerTile);
+
 		public static MapViewport Default
 		{
 			get
 			{
 				var vp = new MapViewport
 				{
-					uv = new Rect(0, 0, 1, 1),
+					rectUV = new Rect(0, 0, 1, 1),
 					pixelCount = 1024,
 					pixelPerTile = 256,
 					tileSize = 1
@@ -96,21 +114,25 @@ namespace _019_EarthMap
 
 		private void UpdateZ()
 		{
-			float vpk = pixelCount / (uv.width * pixelPerTile);
+			float vpk = pixelCount / (rectUV.width * pixelPerTile);
 			Z = Mathf.Log(vpk, 2f);
 			ZMin = Mathf.FloorToInt(Z);
 		}
 
 		private void UpdateScale()
 		{
-			TileScale = pixelPerTile / (pixelCount / (Mathf.Pow(2, ZMin) * uv.width));
+			TileScale = pixelPerTile / (pixelCount / (Mathf.Pow(2, ZMin) * rectUV.width));
+		}
+
+		private void DrawGizmo()
+		{			
 		}
 	}
 
 	public class TileManager_MonoBehaviour : MonoBehaviour
 	{
 		public GameObject tileTemplate;
-		public Rect UV { get { return viewport.uv; } }
+		public Rect UV { get { return viewport.rectUV; } }
 		public int PixelCount { get { return viewport.pixelCount; } }
 		public int PixelPerTile { get { return viewport.pixelPerTile; } }
 
@@ -157,6 +179,8 @@ namespace _019_EarthMap
 						tile = CreateTile(currentIndex, $"tile[{arrayIndex}]");
 						tilesMap[key] = tile;
 					}
+					//var posOffset = TileUtils.TileOffsetFromUV(uv, zMin);
+					//tile.transform.localPosition = new Vector3(i - posOffset.x, 0, -j + posOffset.y) - new Vector3(tileCountXY.x, 0, -tileCountXY.y) * .5f;
 					tile.Keep = true;
 
 					arrayIndex++;
