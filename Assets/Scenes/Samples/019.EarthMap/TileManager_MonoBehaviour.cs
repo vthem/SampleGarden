@@ -44,6 +44,66 @@ namespace _019_EarthMap
 			var offset = gap / tileSize;
 			return offset;
 		}
+
+		public static Vector3 IndexToWorld(Vector3Int index, MapViewport viewport)
+		{
+			Vector3Int centerIndex = FloorUVToIndex(viewportUV, index.z);
+			Vector3 pos = new Vector3(index.x - centerIndex.x, 0f, index.y - centerIndex.y);
+			pos.x = pos.x * tileScale * tileSize;
+			pos.y = pos.y * tileScale * tileSize;
+
+
+		}
+	}
+
+	[System.Serializable]
+	public struct MapViewport
+	{
+		public Rect uv; 
+		public int pixelCount;
+		public int pixelPerTile;
+		public float tileSize;
+		public float TileScale { get; private set; }
+		public float ZMin{ get; private set; }
+		public float Z { get; private set; }
+
+		public static MapViewport Default
+		{
+			get
+			{
+				return new MapViewport
+				{
+					uv = new Rect(0, 0, 1, 1),
+					pixelCount = 1024,
+					pixelPerTile = 256,
+					tileSize = 1
+				};
+			}
+		}
+
+		// z = log2 vpk
+		// z = log2 ( pixelCount / (uv.width * pixelPerTile) )
+		// 2^z = pixelCount / (uv.width * pixelPerTile)
+		// 2^z * uv.width = pixelCount / pixelPerTile
+		// pixelPerTile = pixelCount / (2^z * uv.width) 
+
+		private void Update()
+		{
+			UpdateZ();
+			UpdateScale();
+		}
+
+		private void UpdateZ()
+		{
+			float vpk = pixelCount / (uv.width * pixelPerTile);
+			Z = Mathf.Log(vpk, 2f);
+			ZMin = Mathf.FloorToInt(Z);
+		}
+
+		private void UpdateScale()
+		{
+			TileScale = pixelPerTile / (pixelCount / (Mathf.Pow(2, ZMin) * uv.width));
+		}
 	}
 
 	public class TileManager_MonoBehaviour : MonoBehaviour
@@ -52,6 +112,8 @@ namespace _019_EarthMap
 		public Rect uv = new Rect(0, 0, 1, 1);
 		public int pixelCount = 1024;
 		public int pixelPerTile = 256;
+
+		public MapViewport viewport = MapViewport.Default;
 
 		private List<Vector2Int> tileToRemoveArray = new List<Vector2Int>(16);
 		private readonly Dictionary<Vector2Int, Tile_MonoBehaviour> tilesMap = new Dictionary<Vector2Int, Tile_MonoBehaviour>();
@@ -138,9 +200,14 @@ namespace _019_EarthMap
 
 		private float ComputeZ()
 		{
-			// z = log2 vpk
 			float vpk = pixelCount / (uv.width * pixelPerTile);
 			return Mathf.Log(vpk, 2f);
+
+			// z = log2 vpk
+			// z = log2 ( pixelCount / (uv.width * pixelPerTile) )
+			// 2^z = pixelCount / (uv.width * pixelPerTile)
+			// 2^z * uv.width = pixelCount / pixelPerTile
+			// pixelPerTile = pixelCount / (2^z * uv.width) 
 		}
 	}
 

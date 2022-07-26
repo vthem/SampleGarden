@@ -46,18 +46,18 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Floats:
-    - _BackFaceCullTolerance: 0.01
-    - _FrustumCullTolerance: 0.01
+    - _BackFaceCullTolerance: 0.0001
+    - _FrustumCullTolerance: 0.001
     - _GENERATE_NORMALS: 1
-    - _HeightMapAltitude: 0
+    - _HeightMapAltitude: 3
     - _NormalStrength: 0
     - _PARTITIONING: 0
     - _TESSELLATION_FACTOR: 0
     - _TESSELLATION_SMOOTHING: 0
     - _TessellationBias: 0
-    - _TessellationFactor: 0
+    - _TessellationFactor: 64.05
     - _TessellationFactorVColors: 0
-    - _TessellationSmoothing: 0.75
+    - _TessellationSmoothing: 0.475
     - _TessellationSmoothingVColors: 0
     m_Colors: []
   m_BuildTextureStacks: []

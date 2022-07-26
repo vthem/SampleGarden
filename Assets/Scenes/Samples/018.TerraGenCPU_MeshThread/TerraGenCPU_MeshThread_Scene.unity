@@ -364,8 +364,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 583e1134d3999164f9d0de6b727c4dff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  count: {x: 10, y: 11}
-  size: {x: 10, y: 11}
+  count: {x: 540, y: 270}
+  size: {x: 54, y: 27}
   heightMap: {fileID: 2800000, guid: 4f49a999918bf19498a4100323689610, type: 3}
   heightScale: 1
 --- !u!4 &1678372892

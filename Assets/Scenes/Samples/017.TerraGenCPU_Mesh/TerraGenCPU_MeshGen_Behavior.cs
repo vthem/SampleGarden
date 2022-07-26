@@ -23,11 +23,10 @@ namespace _017_TerraGenCPU_Mesh
 			Mesh mesh = new Mesh();
 
 			mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+
+			#region compute vertices
 			var verticesCount = count.x * count.y;
-
 			Vector3[] vertArray = new Vector3[verticesCount];
-
-			
 			for (int i = 0; i < vertArray.Length; ++i)
 			{
 				Vector2Int idx = Utils.GetXYFromIndex(i, count.x);
@@ -40,8 +39,9 @@ namespace _017_TerraGenCPU_Mesh
 				vertArray[i] = pos3;
 			}
 			mesh.vertices = vertArray;
+			#endregion
 
-
+			#region compute triangles
 			var triCount = (count.x - 1) * (count.y - 1) * 2 * 3;
 
 			int[] triArray = new int[triCount];
@@ -65,7 +65,9 @@ namespace _017_TerraGenCPU_Mesh
 			}
 
 			mesh.triangles = triArray;
+			#endregion
 
+			#region compute normals
 			Vector3[] normalArray = new Vector3[verticesCount];
 			for (int i = 0; i < normalArray.Length; ++i)
 			{
@@ -73,7 +75,9 @@ namespace _017_TerraGenCPU_Mesh
 			}
 
 			mesh.normals = normalArray;
+			#endregion
 
+			#region compute uv
 			Vector2[] uvArray = new Vector2[verticesCount];
 			for (int i = 0; i < uvArray.Length; ++i)
 			{
@@ -83,6 +87,7 @@ namespace _017_TerraGenCPU_Mesh
 				uvArray[i] = uv;
 			}
 			mesh.uv = uvArray;
+			#endregion
 
 			meshFilter.mesh = mesh;
 
