@@ -47,37 +47,38 @@ namespace _019_EarthMap
 
 		public static Vector3 IndexToWorld(Vector3Int index, MapViewport viewport)
 		{
-			Vector3Int centerIndex = FloorUVToIndex(viewportUV, index.z);
+			Vector3Int centerIndex = FloorUVToIndex(viewport.uv.center, index.z);
 			Vector3 pos = new Vector3(index.x - centerIndex.x, 0f, index.y - centerIndex.y);
-			pos.x = pos.x * tileScale * tileSize;
-			pos.y = pos.y * tileScale * tileSize;
-
-
+			pos.x = pos.x * viewport.TileScale * viewport.tileSize;
+			pos.y = pos.y * viewport.TileScale * viewport.tileSize;
+			return pos;
 		}
 	}
 
 	[System.Serializable]
 	public struct MapViewport
 	{
-		public Rect uv; 
+		public Rect uv;
 		public int pixelCount;
 		public int pixelPerTile;
 		public float tileSize;
 		public float TileScale { get; private set; }
-		public float ZMin{ get; private set; }
+		public int ZMin{ get; private set; }
 		public float Z { get; private set; }
 
 		public static MapViewport Default
 		{
 			get
 			{
-				return new MapViewport
+				var vp = new MapViewport
 				{
 					uv = new Rect(0, 0, 1, 1),
 					pixelCount = 1024,
 					pixelPerTile = 256,
 					tileSize = 1
 				};
+				vp.Update();
+				return vp;
 			}
 		}
 
@@ -87,7 +88,7 @@ namespace _019_EarthMap
 		// 2^z * uv.width = pixelCount / pixelPerTile
 		// pixelPerTile = pixelCount / (2^z * uv.width) 
 
-		private void Update()
+		public void Update()
 		{
 			UpdateZ();
 			UpdateScale();
@@ -109,9 +110,9 @@ namespace _019_EarthMap
 	public class TileManager_MonoBehaviour : MonoBehaviour
 	{
 		public GameObject tileTemplate;
-		public Rect uv = new Rect(0, 0, 1, 1);
-		public int pixelCount = 1024;
-		public int pixelPerTile = 256;
+		public Rect UV { get { return viewport.uv; } }
+		public int PixelCount { get { return viewport.pixelCount; } }
+		public int PixelPerTile { get { return viewport.pixelPerTile; } }
 
 		public MapViewport viewport = MapViewport.Default;
 
@@ -122,25 +123,22 @@ namespace _019_EarthMap
 		{
 			tileTemplate.SetActive(false);
 
-			if (pixelCount % pixelPerTile != 0)
+			if (PixelCount % PixelPerTile != 0)
 			{
-				Debug.LogError($"ViewportMap > pixelCount:{pixelCount} should be a multiple of pixelPerTile:{pixelPerTile}");
+				Debug.LogError($"ViewportMap > pixelCount:{PixelCount} should be a multiple of pixelPerTile:{PixelPerTile}");
 				enabled = false;
 			}
 		}
 
 		public void Update()
 		{
+			viewport.Update();
 
-			float z = ComputeZ();
-			int zMin = Mathf.FloorToInt(z);
-			int zMax = Mathf.CeilToInt(z);
-
-			int tileCount1d = (pixelCount / pixelPerTile) + 2;
+			int tileCount1d = (PixelCount / PixelPerTile) + 2;
 			Vector2Int tileCountXY = new Vector2Int(tileCount1d, tileCount1d);
 
-			Vector3Int middleIndex = TileUtils.FloorUVToIndex(uv.center, zMin);
-			Vector3Int firstIndex = new Vector3Int(middleIndex.x - tileCountXY.x, middleIndex.y - tileCountXY.y, zMin);
+			Vector3Int middleIndex = TileUtils.FloorUVToIndex(UV.center, viewport.ZMin);
+			Vector3Int firstIndex = new Vector3Int(middleIndex.x - tileCountXY.x, middleIndex.y - tileCountXY.y, viewport.ZMin);
 
 			Debug.Log($"centerIndex:{firstIndex} middleIndex:{middleIndex}");
 			
@@ -159,8 +157,6 @@ namespace _019_EarthMap
 						tile = CreateTile(currentIndex, $"tile[{arrayIndex}]");
 						tilesMap[key] = tile;
 					}
-					//var posOffset = TileUtils.TileOffsetFromUV(uv, zMin);
-					//tile.transform.localPosition = new Vector3(i - posOffset.x, 0, -j + posOffset.y) - new Vector3(tileCountXY.x, 0, -tileCountXY.y) * .5f;
 					tile.Keep = true;
 
 					arrayIndex++;
@@ -196,18 +192,6 @@ namespace _019_EarthMap
 			tile.index = index;
 			tile.transform.SetParent(transform);
 			return tile;
-		}
-
-		private float ComputeZ()
-		{
-			float vpk = pixelCount / (uv.width * pixelPerTile);
-			return Mathf.Log(vpk, 2f);
-
-			// z = log2 vpk
-			// z = log2 ( pixelCount / (uv.width * pixelPerTile) )
-			// 2^z = pixelCount / (uv.width * pixelPerTile)
-			// 2^z * uv.width = pixelCount / pixelPerTile
-			// pixelPerTile = pixelCount / (2^z * uv.width) 
 		}
 	}
 
