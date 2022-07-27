@@ -66,6 +66,8 @@ namespace _019_EarthMap
 			uv.x = Mathf.InverseLerp(viewport.rectUV.xMin, viewport.rectUV.xMax, uvPoint.x);
 			uv.y = Mathf.InverseLerp(viewport.rectUV.yMin, viewport.rectUV.yMax, uvPoint.y);
 
+			uv -= viewport.rectUV.center;
+
 			pos = new Vector3(viewport.tileSize * viewport.InnerTileCount.x * uv.x, 0, viewport.tileSize * viewport.InnerTileCount.y * uv.y);
 			return true;
 		}
@@ -124,8 +126,18 @@ namespace _019_EarthMap
 			TileScale = pixelPerTile / (pixelCount / (Mathf.Pow(2, ZMin) * rectUV.width));
 		}
 
-		private void DrawGizmo()
-		{			
+		public void DrawGizmo()
+		{
+			Vector3 v0, v1, v2, v3;
+			TileUtils.UVToWorld(new Vector2(rectUV.xMin, rectUV.yMin), this, out v0);
+			TileUtils.UVToWorld(new Vector2(rectUV.xMin, rectUV.yMax), this, out v1);
+			TileUtils.UVToWorld(new Vector2(rectUV.xMax, rectUV.yMax), this, out v2);
+			TileUtils.UVToWorld(new Vector2(rectUV.xMax, rectUV.yMin), this, out v3);
+			Gizmos.DrawLine(v0, v1);
+			Gizmos.DrawLine(v1, v2);
+			Gizmos.DrawLine(v2, v3);
+			Gizmos.DrawLine(v3, v0);
+			Gizmos.
 		}
 	}
 

@@ -294,6 +294,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Border
       objectReference: {fileID: 0}
+    - target: {fileID: 759134373043413464, guid: 90da0036bae01be4089210bdb14804f2, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3502417700396957991, guid: 90da0036bae01be4089210bdb14804f2, type: 3}
       propertyPath: m_RootOrder
       value: 3
@@ -406,7 +410,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &980580352
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -421,11 +425,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   apiKey: e5e7c9f4fdca44c0a925f3af8cbd58fe
   URL: https://b.tile.thunderforest.com/outdoors/__zoom__/__x__/__y__.png?apikey=__key__
-  zoom: 11
-  index: {x: 1017, y: 739}
+  index: {x: 1017, y: 739, z: 11}
   useUV: 0
   uv: {x: 0, y: 0}
   forceGet: 0
+  viewport:
+    rectUV:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    pixelCount: 1024
+    pixelPerTile: 256
+    tileSize: 1
   texture: {fileID: 0}
 --- !u!23 &980580353
 MeshRenderer:
@@ -506,7 +519,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1852283205
 Transform:
   m_ObjectHideFlags: 0
@@ -534,7 +547,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tileTemplate: {fileID: 980580351}
-  tileCountXY: {x: 6, y: 6}
-  zoom: 11
-  index: {x: 1017, y: 739}
-  uv: {x: 0.24829102, y: 0.18041992}
+  viewport:
+    rectUV:
+      serializedVersion: 2
+      x: 0
+      y: 0
+      width: 1
+      height: 1
+    pixelCount: 1024
+    pixelPerTile: 256
+    tileSize: 1

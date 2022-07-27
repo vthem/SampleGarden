@@ -8,7 +8,8 @@ using System.IO;
 using UnityEditor;
 #endif
 
-namespace _019_EarthMap {
+namespace _019_EarthMap
+{
 #if false
 	internal class TileCache : CustomYieldInstruction
 	{
@@ -131,6 +132,7 @@ namespace _019_EarthMap {
 		}
 	}
 #endif
+	[ExecuteInEditMode]
 	public class Tile_MonoBehaviour : MonoBehaviour
 	{
 		public string apiKey = "e5e7c9f4fdca44c0a925f3af8cbd58fe";
@@ -142,32 +144,47 @@ namespace _019_EarthMap {
 
 		public bool forceGet = false;
 
+		public MapViewport viewport;
+
 		public bool Keep { get; set; } = false;
 
 		public Texture2D texture = null;
-		private Coroutine getRoutine;	
+		private Coroutine getRoutine;
 
 
 		// Start is called before the first frame update
 		private void Start()
 		{
-			getRoutine = StartCoroutine(GetTexture());
+			GetTextureAsync();
 		}
 
 		// Update is called once per frame
 		private void Update()
 		{
+			viewport.Update();
+
 			if (forceGet)
 			{
 				forceGet = false;
-				
-				if (getRoutine != null)
-				{
-					StopCoroutine(getRoutine);
-					getRoutine = null;
-				}
-				getRoutine = StartCoroutine(GetTexture());
+
+				GetTextureAsync();
 			}
+		}
+
+		private void GetTextureAsync()
+		{
+#if UNITY_EDITOR
+			if (!EditorApplication.isPlaying)
+			{
+				return;
+			}
+#endif
+			if (getRoutine != null)
+			{
+				StopCoroutine(getRoutine);
+				getRoutine = null;
+			}
+			getRoutine = StartCoroutine(GetTexture());
 		}
 
 		private IEnumerator GetTexture()
@@ -201,6 +218,11 @@ namespace _019_EarthMap {
 			u = u.Replace("__y__", index.y.ToString());
 			u = u.Replace("__key__", apiKey);
 			return u;
+		}
+
+		private void OnDrawGizmosSelected()
+		{
+			viewport.DrawGizmo();
 		}
 	}
 #if UNITY_EDITOR
