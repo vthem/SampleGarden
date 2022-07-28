@@ -11,13 +11,20 @@ namespace _019_EarthMap
 	{
 		public static float TileCount(int zoom)
 		{
-			return Mathf.Pow(2f, zoom + 1f);
+			return Mathf.Pow(2f, zoom);
 		}
 
 		public static Vector3Int FloorUVToIndex(Vector2 uv, int z)
 		{
 			float tileCount = TileCount(z);
 			return new Vector3Int(Mathf.FloorToInt(uv.x * tileCount), Mathf.FloorToInt(uv.y * tileCount), z);
+		}
+
+		public static void FloorUVToIndex(Vector2 uv, int z, ref Vector2Int index)
+		{
+			float tileCount = TileCount(z);
+			index.x = Mathf.FloorToInt(uv.x * tileCount);
+			index.y = Mathf.FloorToInt(uv.y * tileCount); 
 		}
 
 		public static Vector3Int WrapIndex(Vector3Int index)
@@ -28,16 +35,28 @@ namespace _019_EarthMap
 			return index;
 		}
 
-		public static Vector2 IndexToUV(Vector3Int index)
+		public static Vector2 IndexToUVCenter(Vector3Int index)
 		{
 			float max = TileCount(index.z);
 			return new Vector2((index.x / max) + (1 / (2 * max)), (index.y / max) + (1 / (2 * max)));
 		}
 
+		public static Vector2 IndexToUV(Vector3Int index)
+		{
+			float max = TileCount(index.z);
+			return new Vector2(index.x / max, index.y / max);
+		}
+
+		public static Vector2 IndexToUV(Vector2Int index, int z)
+		{
+			float max = TileCount(z);
+			return new Vector2(index.x / max, index.y / max);
+		}
+
 		public static Vector3 TileOffsetFromUV(Vector2 uv, int z)
 		{
 			var index = FloorUVToIndex(uv, z);
-			var roundedUV = IndexToUV(index);
+			var roundedUV = IndexToUVCenter(index);
 			var gap = uv - roundedUV;
 			float tileCount = TileCount(z);
 			var tileSize = 1 / tileCount;
@@ -56,7 +75,7 @@ namespace _019_EarthMap
 
 		public static bool IndexToWorld(Vector3Int index, MapViewport viewport, out Vector3 pos)
 		{
-			Vector2 uv = IndexToUV(index);
+			Vector2 uv = IndexToUVCenter(index);
 			return UVToWorld(uv, viewport, out pos);
 		}
 
@@ -120,6 +139,16 @@ namespace _019_EarthMap
 			UpdateScale();
 		}
 
+		// float vpk = pixelCount / (rectUV.width * pixelPerTile);
+		// Z = Mathf.Log(vpk, 2f);
+		// 2^z = pixelCount / (uv.width * pixelPerTile)
+		// uv.width  = pixelCount / (2^z * pixelPerTile)
+
+		public float MinWidthForZ(int z)
+		{
+			return pixelCount / (Mathf.Pow(2, z) * pixelPerTile);
+		}
+
 		private void UpdateZ()
 		{
 			float vpk = pixelCount / (rectUV.width * pixelPerTile);
@@ -127,6 +156,7 @@ namespace _019_EarthMap
 			ZMin = Mathf.FloorToInt(Z);
 		}
 
+		
 		private void UpdateScale()
 		{
 			TileScale = pixelPerTile / (pixelCount / (Mathf.Pow(2, ZMin) * rectUV.width));

@@ -245,23 +245,39 @@ namespace _019_EarthMap
 
 			var zTileCount = (int)TileUtils.TileCount(tile.index.z);
 
-			var center = TileUtils.FloorUVToIndex(tile.viewport.rectUV.center, tile.index.z);
-			var size = TileUtils.FloorUVToIndex(tile.viewport.rectUV.size, tile.index.z);
+			Vector2Int position = Vector2Int.zero, size = Vector2Int.zero;
+			TileUtils.FloorUVToIndex(tile.viewport.rectUV.position, tile.index.z, ref position);
+			TileUtils.FloorUVToIndex(tile.viewport.rectUV.size, tile.index.z, ref size);
 
-			GUILayout.Label("Viewport setter helper");
-			center = EditorGUILayout.Vector3IntField("center", center);
-			size = EditorGUILayout.Vector3IntField("max", size);
-			
-			center.x = Mathf.Clamp(center.x, 0, zTileCount);
-			center.y = Mathf.Clamp(center.y, 0, zTileCount);
+			Vector2Int half = new Vector2Int(Mathf.RoundToInt(tile.viewport.rectUV.size.x * zTileCount * .5f), Mathf.RoundToInt(tile.viewport.rectUV.size.y * zTileCount * .5f));
+			Vector2Int center = position + half;
+
+			GUILayout.Label("Viewport Info");
+			center = EditorGUILayout.Vector2IntField("center", center);
+			size = EditorGUILayout.Vector2IntField("size", size);
+
 			size.x = Mathf.Clamp(size.x, 0, zTileCount);
 			size.y = Mathf.Clamp(size.y, 0, zTileCount);
+			tile.viewport.rectUV.size = TileUtils.IndexToUV(size, tile.index.z);
 
-			tile.viewport.rectUV.center = TileUtils.IndexToUV(center);
-			tile.viewport.rectUV.size = TileUtils.IndexToUV(size);
+			half = new Vector2Int(Mathf.RoundToInt(tile.viewport.rectUV.size.x * zTileCount * .5f), Mathf.RoundToInt(tile.viewport.rectUV.size.y * zTileCount * .5f));
+
+			center.x = Mathf.Clamp(center.x, half.x, zTileCount - half.x);
+			center.y = Mathf.Clamp(center.y, half.y, zTileCount - half.y);
+
+			position = center - size / 2;
+
+			tile.viewport.rectUV.position = TileUtils.IndexToUV(position, tile.index.z);
+
+			GUILayout.Label($"Viewport z:{tile.viewport.Z} zMin:{tile.viewport.ZMin}");
+			GUILayout.Label($"Viewport w:{tile.viewport.rectUV.width * Mathf.Pow(2, tile.index.z)} size:{size}");
+			GUILayout.Label($"Viewport UV rect min width for z:{tile.index.z} -> {tile.viewport.MinWidthForZ(tile.index.z)} -> {tile.viewport.MinWidthForZ(tile.index.z) * zTileCount}");
+			GUILayout.Space(10f);
+
 
 			if (!string.IsNullOrEmpty(tile.HasError))
 			{
+				GUILayout.Label("Error:");
 				GUILayout.Label(tile.HasError);
 			}
 		}
