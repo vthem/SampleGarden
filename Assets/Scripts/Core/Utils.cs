@@ -76,6 +76,16 @@ public static class Utils
 	{
 		return point.x >= r.xMin && point.x <= r.xMax && point.y >= r.yMin && point.y <= r.yMax;
 	}
+
+	public static Vector2Int XY(this Vector3Int v)
+	{
+		return new Vector2Int(v.x, v.y);
+	}
+
+	public static Vector2Int XZ(this Vector3Int v)
+	{
+		return new Vector2Int(v.x, v.z);
+	}
 }
 public static class UnityExt
 {

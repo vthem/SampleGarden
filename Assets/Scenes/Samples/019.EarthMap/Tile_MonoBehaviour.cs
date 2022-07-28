@@ -139,8 +139,6 @@ namespace _019_EarthMap
 		public string URL = "https://b.tile.thunderforest.com/outdoors/__zoom__/__x__/__y__.png?apikey=__key__";
 
 		public Vector3Int index = new Vector3Int(1017, 739, 11);
-		public bool useUV = false;
-		public Vector2 uv;
 
 		public bool forceGet = false;
 
@@ -149,6 +147,8 @@ namespace _019_EarthMap
 		public bool Keep { get; set; } = false;
 
 		public Texture2D texture = null;
+
+		public string HasError { get; private set; } = null;
 		private Coroutine getRoutine;
 
 
@@ -161,7 +161,19 @@ namespace _019_EarthMap
 		// Update is called once per frame
 		private void Update()
 		{
+			HasError = null;
+
 			viewport.Update();
+
+			Vector3 position;
+			if (TileUtils.IndexToWorld(index, viewport, out position))
+			{
+				transform.position = position;
+			}
+			else
+			{
+				HasError = "fail to find world position";
+			}
 
 			if (forceGet)
 			{
@@ -210,10 +222,6 @@ namespace _019_EarthMap
 		{
 			string u = URL;
 			u = u.Replace("__zoom__", index.z.ToString());
-			if (useUV)
-			{
-				index = TileUtils.FloorUVToIndex(uv, index.z);
-			}
 			u = u.Replace("__x__", index.x.ToString());
 			u = u.Replace("__y__", index.y.ToString());
 			u = u.Replace("__key__", apiKey);
@@ -234,9 +242,27 @@ namespace _019_EarthMap
 			DrawDefaultInspector();
 
 			var tile = target as Tile_MonoBehaviour;
-			if (GUILayout.Button("Compute UV from index"))
+
+			var zTileCount = (int)TileUtils.TileCount(tile.index.z);
+
+			var center = TileUtils.FloorUVToIndex(tile.viewport.rectUV.center, tile.index.z);
+			var size = TileUtils.FloorUVToIndex(tile.viewport.rectUV.size, tile.index.z);
+
+			GUILayout.Label("Viewport setter helper");
+			center = EditorGUILayout.Vector3IntField("center", center);
+			size = EditorGUILayout.Vector3IntField("max", size);
+			
+			center.x = Mathf.Clamp(center.x, 0, zTileCount);
+			center.y = Mathf.Clamp(center.y, 0, zTileCount);
+			size.x = Mathf.Clamp(size.x, 0, zTileCount);
+			size.y = Mathf.Clamp(size.y, 0, zTileCount);
+
+			tile.viewport.rectUV.center = TileUtils.IndexToUV(center);
+			tile.viewport.rectUV.size = TileUtils.IndexToUV(size);
+
+			if (!string.IsNullOrEmpty(tile.HasError))
 			{
-				tile.uv = TileUtils.IndexToUV(tile.index);
+				GUILayout.Label(tile.HasError);
 			}
 		}
 	}

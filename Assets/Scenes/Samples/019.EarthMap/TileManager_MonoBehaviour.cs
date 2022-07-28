@@ -54,6 +54,12 @@ namespace _019_EarthMap
 			return pos;
 		}
 
+		public static bool IndexToWorld(Vector3Int index, MapViewport viewport, out Vector3 pos)
+		{
+			Vector2 uv = IndexToUV(index);
+			return UVToWorld(uv, viewport, out pos);
+		}
+
 		public static bool UVToWorld(Vector2 uvPoint, MapViewport viewport, out Vector3 pos)
 		{
 			if (!viewport.rectUV.ContainsPoint(uvPoint))
@@ -129,15 +135,19 @@ namespace _019_EarthMap
 		public void DrawGizmo()
 		{
 			Vector3 v0, v1, v2, v3;
-			TileUtils.UVToWorld(new Vector2(rectUV.xMin, rectUV.yMin), this, out v0);
-			TileUtils.UVToWorld(new Vector2(rectUV.xMin, rectUV.yMax), this, out v1);
-			TileUtils.UVToWorld(new Vector2(rectUV.xMax, rectUV.yMax), this, out v2);
-			TileUtils.UVToWorld(new Vector2(rectUV.xMax, rectUV.yMin), this, out v3);
+			float d = InnerTileCount.x * .5f * TileScale * tileSize;
+			v0 = new Vector3(-d, 0, -d);
+			v1 = new Vector3(-d, 0, d);
+			v2 = new Vector3(d, 0, d);
+			v3 = new Vector3(d, 0, -d);
+			//TileUtils.UVToWorld(new Vector2(rectUV.xMin, rectUV.yMin), this, out v0);
+			//TileUtils.UVToWorld(new Vector2(rectUV.xMin, rectUV.yMax), this, out v1);
+			//TileUtils.UVToWorld(new Vector2(rectUV.xMax, rectUV.yMax), this, out v2);
+			//TileUtils.UVToWorld(new Vector2(rectUV.xMax, rectUV.yMin), this, out v3);
 			Gizmos.DrawLine(v0, v1);
 			Gizmos.DrawLine(v1, v2);
 			Gizmos.DrawLine(v2, v3);
 			Gizmos.DrawLine(v3, v0);
-			Gizmos.
 		}
 	}
 
