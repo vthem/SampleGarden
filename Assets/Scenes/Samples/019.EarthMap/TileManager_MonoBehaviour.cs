@@ -91,9 +91,11 @@ namespace _019_EarthMap
 			uv.x = Mathf.InverseLerp(viewport.rectUV.xMin, viewport.rectUV.xMax, uvPoint.x);
 			uv.y = Mathf.InverseLerp(viewport.rectUV.yMin, viewport.rectUV.yMax, uvPoint.y);
 
-			uv -= viewport.rectUV.center;
+			Vector2 size = new Vector2(viewport.tileSize * viewport.InnerTileCount.x, viewport.tileSize * viewport.InnerTileCount.y);
+			var minWorld = -size * 0.5f;
+			var maxWorld = size * 0.5f;
 
-			pos = new Vector3(viewport.tileSize * viewport.InnerTileCount.x * uv.x, 0, viewport.tileSize * viewport.InnerTileCount.y * uv.y);
+			pos = new Vector3(Mathf.Lerp(minWorld.x, maxWorld.x, uv.x), 0, Mathf.Lerp(minWorld.y, maxWorld.y, uv.y));
 			return true;
 		}
 	}
