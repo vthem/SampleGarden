@@ -132,6 +132,7 @@ namespace _019_EarthMap
 		}
 	}
 #endif
+
 	[ExecuteInEditMode]
 	public class Tile_MonoBehaviour : MonoBehaviour
 	{
@@ -149,6 +150,7 @@ namespace _019_EarthMap
 		public Texture2D texture = null;
 
 		public string HasError { get; private set; } = null;
+
 		private Coroutine getRoutine;
 
 
@@ -242,38 +244,9 @@ namespace _019_EarthMap
 			DrawDefaultInspector();
 
 			var tile = target as Tile_MonoBehaviour;
+			tile.viewport.DrawInspector(tile.index.z);
 
-			var zTileCount = (int)TileUtils.TileCount(tile.index.z);
-
-			Vector2Int position = Vector2Int.zero, size = Vector2Int.zero;
-			TileUtils.FloorUVToIndex(tile.viewport.rectUV.position, tile.index.z, ref position);
-			TileUtils.FloorUVToIndex(tile.viewport.rectUV.size, tile.index.z, ref size);
-
-			Vector2Int half = new Vector2Int(Mathf.RoundToInt(tile.viewport.rectUV.size.x * zTileCount * .5f), Mathf.RoundToInt(tile.viewport.rectUV.size.y * zTileCount * .5f));
-			Vector2Int center = position + half;
-
-			GUILayout.Label("Viewport Info");
-			center = EditorGUILayout.Vector2IntField("center", center);
-			size = EditorGUILayout.Vector2IntField("size", size);
-
-			size.x = Mathf.Clamp(size.x, 0, zTileCount);
-			size.y = Mathf.Clamp(size.y, 0, zTileCount);
-			tile.viewport.rectUV.size = TileUtils.IndexToUV(size, tile.index.z);
-
-			half = new Vector2Int(Mathf.RoundToInt(tile.viewport.rectUV.size.x * zTileCount * .5f), Mathf.RoundToInt(tile.viewport.rectUV.size.y * zTileCount * .5f));
-
-			center.x = Mathf.Clamp(center.x, half.x, zTileCount - half.x);
-			center.y = Mathf.Clamp(center.y, half.y, zTileCount - half.y);
-
-			position = center - size / 2;
-
-			tile.viewport.rectUV.position = TileUtils.IndexToUV(position, tile.index.z);
-
-			GUILayout.Label($"Viewport z:{tile.viewport.Z} zMin:{tile.viewport.ZMin}");
-			GUILayout.Label($"Viewport w:{tile.viewport.rectUV.width * Mathf.Pow(2, tile.index.z)} size:{size}");
-			GUILayout.Label($"Viewport UV rect min width for z:{tile.index.z} -> {tile.viewport.MinWidthForZ(tile.index.z)} -> {tile.viewport.MinWidthForZ(tile.index.z) * zTileCount}");
 			GUILayout.Space(10f);
-
 
 			if (!string.IsNullOrEmpty(tile.HasError))
 			{

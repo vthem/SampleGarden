@@ -96,12 +96,17 @@ namespace _019_EarthMap
 			var maxWorld = size * 0.5f;
 
 			pos = new Vector3(Mathf.Lerp(minWorld.x, maxWorld.x, uv.x), 0, Mathf.Lerp(minWorld.y, maxWorld.y, uv.y));
+
+			pos.x -= viewport.tileSize * .5f;
+			pos.z -= viewport.tileSize * .5f;
+
+			pos.z *= -1;
 			return true;
 		}
 	}
 
 	[System.Serializable]
-	public struct MapViewport
+	public class MapViewport
 	{
 		public Rect rectUV;
 		public int pixelCount;
@@ -172,14 +177,44 @@ namespace _019_EarthMap
 			v1 = new Vector3(-d, 0, d);
 			v2 = new Vector3(d, 0, d);
 			v3 = new Vector3(d, 0, -d);
-			//TileUtils.UVToWorld(new Vector2(rectUV.xMin, rectUV.yMin), this, out v0);
-			//TileUtils.UVToWorld(new Vector2(rectUV.xMin, rectUV.yMax), this, out v1);
-			//TileUtils.UVToWorld(new Vector2(rectUV.xMax, rectUV.yMax), this, out v2);
-			//TileUtils.UVToWorld(new Vector2(rectUV.xMax, rectUV.yMin), this, out v3);
+
 			Gizmos.DrawLine(v0, v1);
 			Gizmos.DrawLine(v1, v2);
 			Gizmos.DrawLine(v2, v3);
 			Gizmos.DrawLine(v3, v0);
+		}
+
+		public void DrawInspector(int zRef)
+		{
+			var zTileCount = (int)TileUtils.TileCount(zRef);
+
+			Vector2Int position = Vector2Int.zero, size = Vector2Int.zero;
+			TileUtils.FloorUVToIndex(rectUV.position, zRef, ref position);
+			TileUtils.FloorUVToIndex(rectUV.size, zRef, ref size);
+
+			Vector2Int half = new Vector2Int(Mathf.RoundToInt(rectUV.size.x * zTileCount * .5f), Mathf.RoundToInt(rectUV.size.y * zTileCount * .5f));
+			Vector2Int center = position + half;
+
+			GUILayout.Label("Viewport Info");
+			center = EditorGUILayout.Vector2IntField("center", center);
+			size = EditorGUILayout.Vector2IntField("size", size);
+
+			size.x = Mathf.Clamp(size.x, 0, zTileCount);
+			size.y = Mathf.Clamp(size.y, 0, zTileCount);
+			rectUV.size = TileUtils.IndexToUV(size, zRef);
+
+			half = new Vector2Int(Mathf.RoundToInt(rectUV.size.x * zTileCount * .5f), Mathf.RoundToInt(rectUV.size.y * zTileCount * .5f));
+
+			center.x = Mathf.Clamp(center.x, half.x, zTileCount - half.x);
+			center.y = Mathf.Clamp(center.y, half.y, zTileCount - half.y);
+
+			position = center - size / 2;
+
+			rectUV.position = TileUtils.IndexToUV(position, zRef);
+
+			GUILayout.Label($"Viewport z:{Z} zMin:{ZMin}");
+			GUILayout.Label($"Viewport w:{rectUV.width * Mathf.Pow(2, zRef)} size:{size}");
+			GUILayout.Label($"Viewport UV rect min width for z:{zRef} -> {MinWidthForZ(zRef)} -> {MinWidthForZ(zRef) * zTileCount}");
 		}
 	}
 
@@ -233,8 +268,6 @@ namespace _019_EarthMap
 						tile = CreateTile(currentIndex, $"tile[{arrayIndex}]");
 						tilesMap[key] = tile;
 					}
-					//var posOffset = TileUtils.TileOffsetFromUV(uv, zMin);
-					//tile.transform.localPosition = new Vector3(i - posOffset.x, 0, -j + posOffset.y) - new Vector3(tileCountXY.x, 0, -tileCountXY.y) * .5f;
 					tile.Keep = true;
 
 					arrayIndex++;
@@ -268,6 +301,7 @@ namespace _019_EarthMap
 			tileObj.name = name;
 			Tile_MonoBehaviour tile = tileObj.GetComponent<Tile_MonoBehaviour>();
 			tile.index = index;
+			tile.viewport = viewport;
 			tile.transform.SetParent(transform);
 			return tile;
 		}
@@ -282,7 +316,8 @@ namespace _019_EarthMap
 		{
 			DrawDefaultInspector();
 
-			//var mgr = target as TileManager_MonoBehaviour;
+			var mgr = target as TileManager_MonoBehaviour;
+
 			//if (GUILayout.Button("Compute UV from index"))
 			//{
 			//	mgr.uv = TileUtils.IndexToUV(mgr.index, mgr.zoom);
