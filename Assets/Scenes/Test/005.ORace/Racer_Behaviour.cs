@@ -21,6 +21,7 @@ public class Racer_Behaviour : MonoBehaviour
 	private Vector3 yVelocity;
 	private Vector3 velocity;
 	private Vector3 forwardVelocity;
+	private float heading = 0f; // [0, 360[ degree
 
 	private struct GroundPositionInfo
 	{
@@ -105,13 +106,23 @@ public class Racer_Behaviour : MonoBehaviour
 			transform.localPosition = Vector3.SmoothDamp(transform.localPosition, hoverTarget, ref yVelocity, ySmooth, yMaxSpeed);
 		}
 
+		var hInputAxis = Input.GetAxis("Horizontal");
+		heading += yAngularSpeed * Time.deltaTime * hInputAxis;
+		if (heading > 360)
+		{
+			heading = heading - 360f;
+		}
+		else if (heading < 0)
+		{
+			heading += 360f;
+		}
+
 		if (TryComputeForward(out Vector3 forward) && TryComputeRight(out Vector3 right))
 		{
 			Vector3 up = Vector3.Cross(forward, right);
 
 			// rotate forward according
-			var hInputAxis = Input.GetAxis("Horizontal");
-			var rot = Quaternion.AngleAxis(yAngularSpeed * Time.deltaTime * hInputAxis, up);
+			var rot = Quaternion.AngleAxis(heading, up);
 			forward = Vector3.SmoothDamp(forward, rot * forward, ref forwardVelocity, forwardSmoothTime, forwardMaxSpeed);
 			Debug.DrawLine(transform.position, transform.position + transform.forward * 2, Color.blue);
 			Debug.DrawLine(transform.position, transform.position + forward * 2, Color.green);
