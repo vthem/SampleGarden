@@ -152,13 +152,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9f6b87f59806a2d4fb7c8b6782b4a5be, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ySmooth: 0.25
-  yMaxSpeed: 20
+  altitudeModule:
+    enable: 0
+    downAltitudeSmooth: 1
+    verticalMaxSpeed: 1
+    hoverHeight: 0.5
+  rollModule:
+    rollSmooth: 1
+    maxAngle: 45
+    rotation: {x: 0, y: 0, z: 0, w: 0}
+    targetZAngle: 0
+    currentZAngle: 0
+    input: 0
+  yawModule:
+    angularSpeed: 45
+    input: 0
+    rotation: {x: 0, y: 0, z: 0, w: 0}
   zMaxSpeed: 1
-  hoverHeight: 0.5
-  forwardSmoothTime: 0.5
+  forwardSmoothTime: 1
   forwardMaxSpeed: 1
-  yAngularSpeed: 5000
+  yAngularSpeed: 1
 --- !u!4 &222953076
 Transform:
   m_ObjectHideFlags: 0
