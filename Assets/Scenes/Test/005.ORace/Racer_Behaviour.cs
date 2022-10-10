@@ -34,12 +34,11 @@ public class RollModule
 {
 	[Range(0, 1f)] public float rollSmooth = 1f;
 	[Range(10, 90f)] public float maxAngle = 45f;
-
-	public Quaternion rotation;
-	private float currentVelocity;
-	public float targetZAngle;
-	public float currentZAngle;
 	[Range(-1, 1)] public float input = 0f;
+
+	public Quaternion OutRotation { get; private set; }
+
+	private float currentVelocity;
 
 	public void Update(Transform transform)
 	{
@@ -49,72 +48,72 @@ public class RollModule
 			input = hInputAxis = Input.GetAxis("Horizontal");
 		}
 		
-		targetZAngle = -hInputAxis * maxAngle;
-		currentZAngle = transform.localEulerAngles.z;
+		var targetZAngle = -hInputAxis * maxAngle;
+		var currentZAngle = transform.localEulerAngles.z;
 		var newZAngle = Mathf.SmoothDampAngle(currentZAngle, targetZAngle, ref currentVelocity, rollSmooth);
-		//rotation = Quaternion.Euler(0, 0, Mathf.DeltaAngle(currentZAngle, newZAngle));
-		rotation = Quaternion.AngleAxis(Mathf.DeltaAngle(currentZAngle, newZAngle), transform.forward);
+		OutRotation = Quaternion.AngleAxis(Mathf.DeltaAngle(currentZAngle, newZAngle), transform.forward);
 	}
 }
 
 [System.Serializable]
 public class YawModule
 {
-	[Range(0, 90)] public float angularSpeed = 45f;
-	public float input;
-	public Quaternion rotation;
+	[Range(0, 180)] public float angularSpeed = 100f;
+	
+	public Quaternion OutRotation { get; private set; }
 
-	public void Update(Transform transform)
+	public void Update(Vector3 groundUp, float steering)
 	{
-		//rotation = Quaternion.Euler(0, angularSpeed * Time.deltaTime * input, 0);
-		rotation = Quaternion.AngleAxis(-angularSpeed * Time.deltaTime * input, transform.up);
+		OutRotation = Quaternion.AngleAxis(angularSpeed * Time.deltaTime * steering, groundUp);
 	}
 }
 
-public class Racer_Behaviour : MonoBehaviour
+[System.Serializable]
+public class GroundModule
 {
-	public AltitudeModule altitudeModule;
-	public RollModule rollModule;
-	public YawModule yawModule;
+	public bool isValid = false;
+	public Vector3 forward;
+	public Vector3 right;
+	public Vector3 up;
 
-	public float zMaxSpeed = 1f;
-	
-	public float forwardSmoothTime = 1f;
-	public float forwardMaxSpeed = 1f;
+	public static int FrontIndex = 0;
+	public static int CenterIndex = 1;
+	public static int BackIndex = 2;
+	public static int RightIndex = 3;
+	public static int LeftIndex = 4;
 
-	public float yAngularSpeed = 1f;
-
-	
-	private Vector3 velocity;
-	private Vector3 forwardVelocity;
-	private float heading = 0f; // [0, 360[ degree
-
-	private struct GroundPositionInfo
+	public struct GroundPosition
 	{
 		public bool Found { get; set; }
 		public Vector3 Position { get; set; }
 		public Vector3 Offset { get; set; }
-
-		public static int FrontIndex = 0;
-		public static int CenterIndex = 1;
-		public static int BackIndex = 2;
-		public static int RightIndex = 3;
-		public static int LeftIndex = 4;
 	}
-	private GroundPositionInfo[] groundPositionInfoArray =
+
+	private GroundPosition[] groundPositionArray =
 	{
-		new GroundPositionInfo{ Found = false, Position = Vector3.zero, Offset = Vector3.forward },
-		new GroundPositionInfo{ Found = false, Position = Vector3.zero, Offset = Vector3.back },
-		new GroundPositionInfo{ Found = false, Position = Vector3.zero, Offset = Vector3.zero },
-		new GroundPositionInfo{ Found = false, Position = Vector3.zero, Offset = Vector3.right },
-		new GroundPositionInfo{ Found = false, Position = Vector3.zero, Offset = Vector3.left }
+		new GroundPosition{ Found = false, Position = Vector3.zero, Offset = Vector3.forward },
+		new GroundPosition{ Found = false, Position = Vector3.zero, Offset = Vector3.back },
+		new GroundPosition{ Found = false, Position = Vector3.zero, Offset = Vector3.zero },
+		new GroundPosition{ Found = false, Position = Vector3.zero, Offset = Vector3.right },
+		new GroundPosition{ Found = false, Position = Vector3.zero, Offset = Vector3.left }
 	};
 
-	void UpdateGroundPositionInfoArray()
+	void FindNormalOfClosestVertices(Mesh mesh, Vector3 wPoint)
 	{
-		for (int i = 0; i < groundPositionInfoArray.Length; ++i)
+		var vertices = mesh.vertices;
+		for (int i = 0; i < vertices.Length; ++i)
 		{
-			var gp = groundPositionInfoArray[i];
+
+		}
+	}
+
+	void UpdateGroundPositionArray(Transform transform)
+	{
+		isValid = false;
+
+		for (int i = 0; i < groundPositionArray.Length; ++i)
+		{
+			var gp = groundPositionArray[i];
 			gp.Found = false;
 			gp.Position = Vector3.zero;
 
@@ -125,15 +124,15 @@ public class Racer_Behaviour : MonoBehaviour
 				gp.Position = hit.point;
 				Debug.DrawLine(transform.position, hit.point);
 			}
-			
-			groundPositionInfoArray[i] = gp;
+
+			groundPositionArray[i] = gp;
 		}
 	}
 
-	bool TryComputeForward(out Vector3 forward)
+	private bool TryComputeForward()
 	{
-		var gpFront = groundPositionInfoArray[GroundPositionInfo.FrontIndex];
-		var gpBack = groundPositionInfoArray[GroundPositionInfo.BackIndex];
+		var gpFront = groundPositionArray[FrontIndex];
+		var gpBack = groundPositionArray[BackIndex];
 
 		if (!gpFront.Found || !gpBack.Found)
 		{
@@ -144,10 +143,10 @@ public class Racer_Behaviour : MonoBehaviour
 		forward = (gpFront.Position - gpBack.Position).normalized;
 		return true;
 	}
-	bool TryComputeRight(out Vector3 right)
+	private bool TryComputeRight()
 	{
-		var gpRight = groundPositionInfoArray[GroundPositionInfo.RightIndex];
-		var gpLeft = groundPositionInfoArray[GroundPositionInfo.LeftIndex];
+		var gpRight = groundPositionArray[RightIndex];
+		var gpLeft = groundPositionArray[LeftIndex];
 
 		if (!gpRight.Found || !gpLeft.Found)
 		{
@@ -159,45 +158,45 @@ public class Racer_Behaviour : MonoBehaviour
 		return true;
 	}
 
-	// Update is called once per frame
+	public void Update(Transform transform)
+	{
+		UpdateGroundPositionArray(transform);
+
+		isValid = TryComputeForward() && TryComputeRight();
+
+		if (isValid)
+		{
+			up = Vector3.Cross(forward, right);
+		}
+	}
+
+	public GroundPosition this[int index] {
+		get => groundPositionArray[index];
+	}
+}
+
+public class Racer_Behaviour : MonoBehaviour
+{
+	public AltitudeModule altitudeModule;
+	public RollModule rollModule;
+	public YawModule yawModule;
+	public GroundModule groundModule;
+
 	void Update()
 	{
-		UpdateGroundPositionInfoArray();
+		groundModule.Update(transform);
 
-		var gpCenter = groundPositionInfoArray[GroundPositionInfo.CenterIndex];
-		if (gpCenter.Found)
+		var center = groundModule[GroundModule.CenterIndex];
+		if (center.Found)
 		{
-			altitudeModule.Update(transform, gpCenter.Position);
+			altitudeModule.Update(transform, center.Position);
 		}
 
-		//var hInputAxis = Input.GetAxis("Horizontal");
-		//heading += yAngularSpeed * Time.deltaTime * hInputAxis;
-		//if (heading > 360)
-		//{
-		//	heading = heading - 360f;
-		//}
-		//else if (heading < 0)
-		//{
-		//	heading += 360f;
-		//}
-
-		//if (TryComputeForward(out Vector3 forward) && TryComputeRight(out Vector3 right))
-		//{
-		//	Vector3 up = Vector3.Cross(forward, right);
-
-		//	// rotate forward according
-		//	var rot = Quaternion.AngleAxis(heading, up);
-		//	forward = Vector3.SmoothDamp(forward, rot * forward, ref forwardVelocity, forwardSmoothTime, forwardMaxSpeed);
-		//	Debug.DrawLine(transform.position, transform.position + transform.forward * 2, Color.blue);
-		//	Debug.DrawLine(transform.position, transform.position + forward * 2, Color.green);
-		//	//transform.rotation = Quaternion.LookRotation(forward, up);
-		//}
-
 		rollModule.Update(transform);
-		yawModule.input = rollModule.input;
-		yawModule.Update(transform);
+		//yawModule.Update(groundModule.up, rollModule.input);
+		yawModule.Update(Vector3.up, rollModule.input);
 
-		transform.rotation *= rollModule.rotation/* * yawModule.rotation*/;
+		transform.rotation *= /*rollModule.OutRotation **/ yawModule.OutRotation;
 	}
 
 #if UNITY_EDITOR
