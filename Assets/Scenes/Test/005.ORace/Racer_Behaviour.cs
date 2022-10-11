@@ -40,7 +40,7 @@ public class RollModule
 
 	private float currentVelocity;
 
-	public void Update(Transform transform)
+	public void Update(Vector3 forward, float heading)
 	{
 		var hInputAxis = input;
 		if (hInputAxis == 0)
@@ -49,9 +49,9 @@ public class RollModule
 		}
 		
 		var targetZAngle = -hInputAxis * maxAngle;
-		var currentZAngle = transform.localEulerAngles.z;
+		var currentZAngle = heading;
 		var newZAngle = Mathf.SmoothDampAngle(currentZAngle, targetZAngle, ref currentVelocity, rollSmooth);
-		OutRotation = Quaternion.AngleAxis(Mathf.DeltaAngle(currentZAngle, newZAngle), transform.forward);
+		OutRotation = Quaternion.AngleAxis(Mathf.DeltaAngle(currentZAngle, newZAngle), forward);
 	}
 }
 
@@ -133,7 +133,7 @@ public class GroundModule
 			gp.Found = false;
 			gp.Position = Vector3.zero;
 
-			Ray r = new Ray(transform.position + transform.TransformVector(gp.Offset), -transform.up);
+			Ray r = new Ray(transform.position + transform.TransformVector(gp.Offset), gravity);
 			if (Physics.Raycast(r, out RaycastHit hit, 1000f))
 			{
 				gp.Found = true;
@@ -225,11 +225,10 @@ public class Racer_Behaviour : MonoBehaviour
 			altitudeModule.Update(transform, center.Position);
 		}
 
-		rollModule.Update(transform);
-		//yawModule.Update(groundModule.up, rollModule.input);
+		rollModule.Update(groundModule.forward, transform.localEulerAngles.z);
 		yawModule.Update(-groundModule.gravity, rollModule.input);
 
-		transform.rotation = /*rollModule.OutRotation **/ yawModule.OutRotation * transform.rotation;
+		transform.rotation = rollModule.OutRotation * yawModule.OutRotation * transform.rotation;
 	}
 
 #if UNITY_EDITOR
