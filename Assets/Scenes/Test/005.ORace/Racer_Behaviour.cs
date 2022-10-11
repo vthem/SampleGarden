@@ -75,6 +75,7 @@ public class GroundModule
 	public Vector3 forward;
 	public Vector3 right;
 	public Vector3 up;
+	public Vector3 gravity;
 
 	public static int FrontIndex = 0;
 	public static int CenterIndex = 1;
@@ -98,13 +99,28 @@ public class GroundModule
 		new GroundPosition{ Found = false, Position = Vector3.zero, Offset = Vector3.left }
 	};
 
-	void FindNormalOfClosestVertices(Mesh mesh, Vector3 wPoint)
+	static bool FindGravityAtWorldPoint(Mesh mesh, Vector3 wPoint, Matrix4x4 localToWorld, ref Vector3 normal)
 	{
 		var vertices = mesh.vertices;
+		float minDistance = float.MaxValue;
+		int minIdx = -1;
 		for (int i = 0; i < vertices.Length; ++i)
 		{
-
+			var wVertex = localToWorld.MultiplyPoint(vertices[i]);
+			var sqDistance = (wVertex - wPoint).sqrMagnitude;
+			if (sqDistance < minDistance)
+			{
+				minDistance = sqDistance;
+				minIdx = i;
+			}
 		}
+		if (minIdx < 0)
+		{
+			return false;
+		}
+
+		normal = -mesh.normals[minIdx];
+		return true;
 	}
 
 	void UpdateGroundPositionArray(Transform transform)
@@ -158,8 +174,17 @@ public class GroundModule
 		return true;
 	}
 
-	public void Update(Transform transform)
+	public void Update(Transform transform, Mesh worldMesh, Matrix4x4 localToWorld)
 	{
+
+		if (!FindGravityAtWorldPoint(worldMesh, transform.position, localToWorld, ref gravity))
+		{
+			isValid = false;
+			return;
+		}
+		Debug.DrawLine(transform.position, transform.position + gravity * 3, Color.blue);
+
+
 		UpdateGroundPositionArray(transform);
 
 		isValid = TryComputeForward() && TryComputeRight();
@@ -182,9 +207,17 @@ public class Racer_Behaviour : MonoBehaviour
 	public YawModule yawModule;
 	public GroundModule groundModule;
 
+	public GameObject worldMeshObj;
+	private Mesh worldMesh;
+
+	private void Start()
+	{
+		worldMesh = worldMeshObj.GetComponent<MeshFilter>().sharedMesh;
+	}
+
 	void Update()
 	{
-		groundModule.Update(transform);
+		groundModule.Update(transform, worldMesh, worldMeshObj.transform.localToWorldMatrix);
 
 		var center = groundModule[GroundModule.CenterIndex];
 		if (center.Found)
@@ -194,9 +227,9 @@ public class Racer_Behaviour : MonoBehaviour
 
 		rollModule.Update(transform);
 		//yawModule.Update(groundModule.up, rollModule.input);
-		yawModule.Update(Vector3.up, rollModule.input);
+		yawModule.Update(-groundModule.gravity, rollModule.input);
 
-		transform.rotation *= /*rollModule.OutRotation **/ yawModule.OutRotation;
+		transform.rotation = /*rollModule.OutRotation **/ yawModule.OutRotation * transform.rotation;
 	}
 
 #if UNITY_EDITOR
