@@ -9,7 +9,7 @@ using UnityEditor;
 
 
 [System.Serializable]
-public class AltitudeModule
+public class GravityModule
 {
 	public bool enable = false;
 	public float downAltitudeSmooth = 1f;
@@ -69,13 +69,43 @@ public class YawModule
 }
 
 [System.Serializable]
+public class PitchModule
+{
+	[Range(0, 1f)] public float smooth = 1f;
+	[Range(0, 50f)] public float maxSpeed = 1f;
+
+	private Vector3 velocity;
+
+	public Quaternion OutRotation { get; private set; }
+
+	public void Update(Vector3 forward, Vector3 groundForward)
+	{
+		var newForward = Vector3.SmoothDamp(forward, groundForward, ref velocity, smooth, maxSpeed);
+		OutRotation = Quaternion.FromToRotation(forward, newForward);
+	}
+}
+
+[System.Serializable]
+public class MoveModule
+{
+	[Range(0, 50f)] public float maxSpeed = 1f;
+
+	public Vector3 Translation { get; private set; }
+
+	public void Update(Vector3 forward)
+	{
+		Translation = forward * maxSpeed * Time.deltaTime;
+	}
+}
+
+[System.Serializable]
 public class GroundModule
 {
 	public bool isValid = false;
 	public Vector3 forward;
 	public Vector3 right;
 	public Vector3 up;
-	public Vector3 gravity;
+	public Vector3 gravity;	
 
 	public static int FrontIndex = 0;
 	public static int CenterIndex = 1;
@@ -202,10 +232,12 @@ public class GroundModule
 
 public class Racer_Behaviour : MonoBehaviour
 {
-	public AltitudeModule altitudeModule;
+	public GravityModule gravityModule;
 	public RollModule rollModule;
 	public YawModule yawModule;
 	public GroundModule groundModule;
+	public PitchModule pichModule;
+	public MoveModule moveModule;
 
 	public GameObject worldMeshObj;
 	private Mesh worldMesh;
@@ -222,13 +254,16 @@ public class Racer_Behaviour : MonoBehaviour
 		var center = groundModule[GroundModule.CenterIndex];
 		if (center.Found)
 		{
-			altitudeModule.Update(transform, center.Position);
+			gravityModule.Update(transform, center.Position);
 		}
 
 		rollModule.Update(groundModule.forward, transform.localEulerAngles.z);
 		yawModule.Update(-groundModule.gravity, rollModule.input);
+		pichModule.Update(transform.forward, groundModule.forward);
+		moveModule.Update(transform.forward);
 
-		transform.rotation = rollModule.OutRotation * yawModule.OutRotation * transform.rotation;
+		transform.rotation = pichModule.OutRotation * rollModule.OutRotation * yawModule.OutRotation * transform.rotation;
+		transform.position += moveModule.Translation;
 	}
 
 #if UNITY_EDITOR
@@ -240,7 +275,7 @@ public class Racer_Behaviour : MonoBehaviour
 			DrawDefaultInspector();
 
 			var racer = target as Racer_Behaviour;
-			racer.altitudeModule.enable = EditorGUILayout.Toggle("Enable Fake Gravity", racer.altitudeModule.enable);
+			racer.gravityModule.enable = EditorGUILayout.Toggle("Enable Fake Gravity", racer.gravityModule.enable);
 		}
 	}
 #endif
