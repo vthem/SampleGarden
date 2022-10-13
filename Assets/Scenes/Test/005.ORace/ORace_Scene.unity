@@ -152,23 +152,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9f6b87f59806a2d4fb7c8b6782b4a5be, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  altitudeModule:
-    enable: 0
-    downAltitudeSmooth: 1
-    verticalMaxSpeed: 1
+  gravityModule:
+    enable: 1
+    downAltitudeSmooth: 0.2
+    verticalMaxSpeed: 5
     hoverHeight: 0.5
   rollModule:
-    rollSmooth: 1
+    rollSmooth: 0.2
     maxAngle: 45
     input: 0
   yawModule:
-    angularSpeed: 119
+    angularSpeed: 180
   groundModule:
     isValid: 0
     forward: {x: 0, y: 0, z: 0}
     right: {x: 0, y: 0, z: 0}
     up: {x: 0, y: 0, z: 0}
     gravity: {x: 0, y: 0, z: 0}
+  pichModule:
+    smooth: 0.2
+    maxSpeed: 10
+  moveModule:
+    maxSpeed: 1
   worldMeshObj: {fileID: 841165729}
 --- !u!4 &222953076
 Transform:
@@ -177,8 +182,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 222953074}
-  m_LocalRotation: {x: 0, y: 0, z: 0.38268343, w: 0.92387956}
-  m_LocalPosition: {x: 0.000000028318432, y: -13.74, z: 0.000000047566076}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -13.35, z: -97.75}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 1896221294}
@@ -186,7 +191,7 @@ Transform:
   - {fileID: 1875017725}
   m_Father: {fileID: 0}
   m_RootOrder: 2
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 45}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &417677896
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -467,6 +472,7 @@ GameObject:
   - component: {fileID: 1670208350}
   - component: {fileID: 1670208349}
   - component: {fileID: 1670208352}
+  - component: {fileID: 1670208353}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -572,6 +578,25 @@ MonoBehaviour:
   m_RequiresDepthTexture: 0
   m_RequiresColorTexture: 0
   m_Version: 2
+--- !u!114 &1670208353
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1670208348}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bc063d251c24cd34e9fa316ef03170ca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  target: {fileID: 222953076}
+  lookAtTargetOffset: {x: 0, y: 0, z: 5}
+  positionTargetOffset: {x: 0, y: 1, z: -3}
+  postionMaxSpeed: 50
+  positionSmoothTime: 0.5
+  lookAtMaxSpeed: 50
+  lookAtSmoothTime: 0.5
 --- !u!1 &1875017724
 GameObject:
   m_ObjectHideFlags: 0
