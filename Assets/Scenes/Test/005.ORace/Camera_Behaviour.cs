@@ -6,8 +6,8 @@ public class Camera_Behaviour : MonoBehaviour
 {
 	public Transform target;
 
-	public Vector3 lookAtTargetOffset;
-	public Vector3 positionTargetOffset;
+	public Vector3 lookAtTargetVector;
+	public Vector3 positionTargetVector;
 
 	public float postionMaxSpeed = 1f;
 	[Range(0, 1f)] public float positionSmoothTime = 1f;
@@ -18,7 +18,23 @@ public class Camera_Behaviour : MonoBehaviour
 	private Vector3 positionVelocity;
 	private Vector3 lookAtVelocity;
 
-	private Vector3 lookAtTargetPosition;
+	private Vector3 currentLookAtTargetPosition;
+
+	public Vector3 WorldPositionTargetPosition
+	{
+		get
+		{
+			return target.transform.position + target.TransformVector(positionTargetVector);
+		}
+	}
+
+	public Vector3 WorldLookAtTargetPosition
+	{
+		get
+		{
+			return target.transform.position + target.TransformVector(lookAtTargetVector);
+		}
+	}
 
 	private void Start()
 	{
@@ -27,16 +43,16 @@ public class Camera_Behaviour : MonoBehaviour
 
 	void LateUpdate()
     {
-		transform.position = Vector3.SmoothDamp(transform.position, target.transform.position + positionTargetOffset, ref positionVelocity, positionSmoothTime, postionMaxSpeed);
-		lookAtTargetPosition = Vector3.SmoothDamp(lookAtTargetPosition, target.position + lookAtTargetOffset, ref lookAtVelocity, lookAtSmoothTime, lookAtMaxSpeed);
-		transform.LookAt(lookAtTargetPosition);
+		transform.position = Vector3.SmoothDamp(transform.position, WorldPositionTargetPosition, ref positionVelocity, positionSmoothTime, postionMaxSpeed);
+		currentLookAtTargetPosition = Vector3.SmoothDamp(currentLookAtTargetPosition, WorldLookAtTargetPosition, ref lookAtVelocity, lookAtSmoothTime, lookAtMaxSpeed);
+		transform.LookAt(currentLookAtTargetPosition);
 	}
 
 	[ContextMenu("Force Position & Rotation")]
 	void ForcePositionAndRotation()
 	{
-		lookAtTargetPosition = target.position + lookAtTargetOffset;
-		transform.position = target.transform.position + positionTargetOffset;
-		transform.LookAt(lookAtTargetPosition);
+		currentLookAtTargetPosition = WorldLookAtTargetPosition;
+		transform.position = WorldPositionTargetPosition;
+		transform.LookAt(currentLookAtTargetPosition);
 	}
 }
