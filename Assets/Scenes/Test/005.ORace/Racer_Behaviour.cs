@@ -9,9 +9,14 @@ using UnityEditor;
 
 
 [System.Serializable]
-public class GravityModule
+public class BaseModule
 {
-	public bool enable = false;
+	public bool enable = true;
+}
+
+[System.Serializable]
+public class GravityModule : BaseModule
+{
 	public float downAltitudeSmooth = 1f;
 	public float verticalMaxSpeed = 1f;
 	public float hoverHeight = 0.5f;
@@ -30,13 +35,14 @@ public class GravityModule
 }
 
 [System.Serializable]
-public class RollModule
+public class RollModule : BaseModule
 {
 	[Range(0, 1f)] public float rollSmooth = 1f;
 	[Range(10, 90f)] public float maxAngle = 45f;
 	[Range(-1, 1)] public float input = 0f;
 
 	public Quaternion OutRotation { get; private set; }
+	public float OutNormalizedRoll { get; private set; }
 
 	private float currentVelocity;
 
@@ -45,18 +51,19 @@ public class RollModule
 		var hInputAxis = input;
 		if (hInputAxis == 0)
 		{
-			input = hInputAxis = Input.GetAxis("Horizontal");
+			hInputAxis = Input.GetAxis("Horizontal");
 		}
 		
 		var targetZAngle = -hInputAxis * maxAngle;
 		var currentZAngle = heading;
 		var newZAngle = Mathf.SmoothDampAngle(currentZAngle, targetZAngle, ref currentVelocity, rollSmooth);
 		OutRotation = Quaternion.AngleAxis(Mathf.DeltaAngle(currentZAngle, newZAngle), forward);
+		OutNormalizedRoll = hInputAxis;
 	}
 }
 
 [System.Serializable]
-public class YawModule
+public class YawModule : BaseModule
 {
 	[Range(0, 180)] public float angularSpeed = 100f;
 	
@@ -69,7 +76,7 @@ public class YawModule
 }
 
 [System.Serializable]
-public class PitchModule
+public class PitchModule : BaseModule
 {
 	[Range(0, 1f)] public float smooth = 1f;
 	[Range(0, 50f)] public float maxSpeed = 1f;
@@ -86,7 +93,7 @@ public class PitchModule
 }
 
 [System.Serializable]
-public class MoveModule
+public class MoveModule : BaseModule
 {
 	[Range(0, 50f)] public float maxSpeed = 1f;
 
@@ -99,7 +106,7 @@ public class MoveModule
 }
 
 [System.Serializable]
-public class GroundModule
+public class GroundModule : BaseModule
 {
 	public bool isValid = false;
 	public Vector3 forward;
@@ -258,12 +265,15 @@ public class Racer_Behaviour : MonoBehaviour
 		}
 
 		rollModule.Update(groundModule.forward, transform.localEulerAngles.z);
-		yawModule.Update(-groundModule.gravity, rollModule.input);
+		yawModule.Update(-groundModule.gravity, rollModule.OutNormalizedRoll);
 		pichModule.Update(transform.forward, groundModule.forward);
 		moveModule.Update(transform.forward);
 
 		transform.rotation = pichModule.OutRotation * rollModule.OutRotation * yawModule.OutRotation * transform.rotation;
-		transform.position += moveModule.Translation;
+		if (moveModule.enable)
+		{
+			transform.position += moveModule.Translation;
+		}
 	}
 
 #if UNITY_EDITOR

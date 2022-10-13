@@ -156,24 +156,29 @@ MonoBehaviour:
     enable: 1
     downAltitudeSmooth: 0.2
     verticalMaxSpeed: 5
-    hoverHeight: 0.5
+    hoverHeight: 2
   rollModule:
+    enable: 1
     rollSmooth: 0.2
     maxAngle: 45
     input: 0
   yawModule:
+    enable: 1
     angularSpeed: 180
   groundModule:
+    enable: 1
     isValid: 0
     forward: {x: 0, y: 0, z: 0}
     right: {x: 0, y: 0, z: 0}
     up: {x: 0, y: 0, z: 0}
     gravity: {x: 0, y: 0, z: 0}
   pichModule:
+    enable: 1
     smooth: 0.2
     maxSpeed: 10
   moveModule:
-    maxSpeed: 1
+    enable: 1
+    maxSpeed: 5
   worldMeshObj: {fileID: 841165729}
 --- !u!4 &222953076
 Transform:
@@ -595,8 +600,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   target: {fileID: 222953076}
-  lookAtTargetOffset: {x: 0, y: 0, z: 5}
-  positionTargetOffset: {x: 0, y: 1, z: -3}
+  lookAtTargetVector: {x: 0, y: 0.6, z: 0}
+  positionTargetVector: {x: 0, y: 1, z: -2}
   postionMaxSpeed: 50
   positionSmoothTime: 0.5
   lookAtMaxSpeed: 50
