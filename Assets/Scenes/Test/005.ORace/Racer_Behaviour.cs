@@ -14,6 +14,11 @@ public class BaseModule
 	public bool enable = true;
 }
 
+public interface IApplyTransformModule
+{
+	void ApplyTransform(Transform transform);
+}
+
 [System.Serializable]
 public class GravityModule : BaseModule
 {
@@ -35,7 +40,7 @@ public class GravityModule : BaseModule
 }
 
 [System.Serializable]
-public class RollModule : BaseModule
+public class RollModule : BaseModule, IApplyTransformModule
 {
 	[Range(0, 1f)] public float rollSmooth = 1f;
 	[Range(10, 90f)] public float maxAngle = 45f;
@@ -45,6 +50,11 @@ public class RollModule : BaseModule
 	public float OutNormalizedRoll { get; private set; }
 
 	private float currentVelocity;
+
+	public void ApplyTransform(Transform transform)
+	{
+		transform.rotation = OutRotation * transform.rotation;
+	}
 
 	public void Update(Vector3 forward, float heading)
 	{
@@ -63,11 +73,16 @@ public class RollModule : BaseModule
 }
 
 [System.Serializable]
-public class YawModule : BaseModule
+public class YawModule : BaseModule, IApplyTransformModule
 {
 	[Range(0, 180)] public float angularSpeed = 100f;
 	
 	public Quaternion OutRotation { get; private set; }
+
+	public void ApplyTransform(Transform transform)
+	{
+		transform.rotation = OutRotation * transform.rotation;
+	}
 
 	public void Update(Vector3 groundUp, float steering)
 	{
@@ -76,7 +91,7 @@ public class YawModule : BaseModule
 }
 
 [System.Serializable]
-public class PitchModule : BaseModule
+public class PitchModule : BaseModule, IApplyTransformModule
 {
 	[Range(0, 1f)] public float smooth = 1f;
 	[Range(0, 50f)] public float maxSpeed = 1f;
@@ -84,6 +99,11 @@ public class PitchModule : BaseModule
 	private Vector3 velocity;
 
 	public Quaternion OutRotation { get; private set; }
+
+	public void ApplyTransform(Transform transform)
+	{
+		transform.rotation = OutRotation * transform.rotation;
+	}
 
 	public void Update(Vector3 forward, Vector3 groundForward)
 	{
@@ -93,11 +113,16 @@ public class PitchModule : BaseModule
 }
 
 [System.Serializable]
-public class MoveModule : BaseModule
+public class MoveModule : BaseModule, IApplyTransformModule
 {
 	[Range(0, 50f)] public float maxSpeed = 1f;
 
 	public Vector3 Translation { get; private set; }
+
+	public void ApplyTransform(Transform transform)
+	{
+		transform.position += Translation;
+	}
 
 	public void Update(Vector3 forward)
 	{
@@ -249,9 +274,12 @@ public class Racer_Behaviour : MonoBehaviour
 	public GameObject worldMeshObj;
 	private Mesh worldMesh;
 
+	private BaseModule[] modules;
+
 	private void Start()
 	{
 		worldMesh = worldMeshObj.GetComponent<MeshFilter>().sharedMesh;
+		modules = new BaseModule [] { gravityModule, rollModule, yawModule, groundModule, pichModule, moveModule };
 	}
 
 	void Update()
@@ -268,11 +296,19 @@ public class Racer_Behaviour : MonoBehaviour
 		yawModule.Update(-groundModule.gravity, rollModule.OutNormalizedRoll);
 		pichModule.Update(transform.forward, groundModule.forward);
 		moveModule.Update(transform.forward);
-
-		transform.rotation = pichModule.OutRotation * rollModule.OutRotation * yawModule.OutRotation * transform.rotation;
-		if (moveModule.enable)
+		
+		for (int i = 0; i < modules.Length; i++)
 		{
-			transform.position += moveModule.Translation;
+			var module = modules[i];
+			if (!module.enable)
+			{
+				continue;
+			}
+			var applyTransform = module as IApplyTransformModule;
+			if (applyTransform != null)
+			{
+				applyTransform.ApplyTransform(transform);
+			}
 		}
 	}
 
