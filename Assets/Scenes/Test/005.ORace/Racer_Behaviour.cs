@@ -46,8 +46,11 @@ public class RollModule : BaseModule, IApplyTransformModule
 	[Range(10, 90f)] public float maxAngle = 45f;
 	[Range(-1, 1)] public float input = 0f;
 
-	public Quaternion OutRotation { get; private set; }
+	public Quaternion OutRotation;
 	public float OutNormalizedRoll { get; private set; }
+
+	public float groundAngle = 0f;
+	public float targetAngle = 0f;
 
 	private float currentVelocity;
 
@@ -56,18 +59,20 @@ public class RollModule : BaseModule, IApplyTransformModule
 		transform.rotation = OutRotation * transform.rotation;
 	}
 
-	public void Update(Vector3 forward, float heading)
+	public void Update(Transform transform, GroundModule groundModule)
 	{
 		var hInputAxis = input;
 		if (hInputAxis == 0)
 		{
 			hInputAxis = Input.GetAxis("Horizontal");
 		}
-		
-		var targetZAngle = -hInputAxis * maxAngle;
-		var currentZAngle = heading;
-		var newZAngle = Mathf.SmoothDampAngle(currentZAngle, targetZAngle, ref currentVelocity, rollSmooth);
-		OutRotation = Quaternion.AngleAxis(Mathf.DeltaAngle(currentZAngle, newZAngle), forward);
+
+
+
+		//groundAngle = Vector3.SignedAngle(groundModule.right, gr.right, Vector3.Cross());
+		//targetAngle = -hInputAxis * maxAngle + groundAngle;
+		//var currentAngleStep = Mathf.SmoothDampAngle(transform.localEulerAngles.z, targetAngle, ref currentVelocity, rollSmooth);
+		//OutRotation = Quaternion.AngleAxis(Mathf.DeltaAngle(currentAngleStep, targetAngle), transform.forward);
 		OutNormalizedRoll = hInputAxis;
 	}
 }
@@ -131,7 +136,7 @@ public class MoveModule : BaseModule, IApplyTransformModule
 }
 
 [System.Serializable]
-public class GroundModule : BaseModule
+public class GroundModule : BaseModule, IApplyTransformModule
 {
 	public bool isValid = false;
 	public Vector3 forward;
@@ -144,6 +149,9 @@ public class GroundModule : BaseModule
 	public static int BackIndex = 2;
 	public static int RightIndex = 3;
 	public static int LeftIndex = 4;
+
+	public bool drawDebugGravity = false;
+	public bool drawDebugGroundPosition = false;
 
 	public struct GroundPosition
 	{
@@ -160,18 +168,23 @@ public class GroundModule : BaseModule
 		new GroundPosition{ Found = false, Position = Vector3.zero, Offset = Vector3.right },
 		new GroundPosition{ Found = false, Position = Vector3.zero, Offset = Vector3.left }
 	};
+	private Quaternion gravityRotationDerivative;
+	[Range(0, 1f)] public float gravitySmoothTime;
+	private Quaternion outRotation;
 
-	static bool FindGravityAtWorldPoint(Mesh mesh, Vector3 wPoint, Matrix4x4 localToWorld, ref Vector3 normal)
+	bool FindGravityAtWorldPoint(Mesh mesh, Vector3 wPoint, Matrix4x4 localToWorld, ref Vector3 normal)
 	{
 		var vertices = mesh.vertices;
 		float minDistance = float.MaxValue;
 		int minIdx = -1;
+		Vector3 wGravityPoint = Vector3.zero;
 		for (int i = 0; i < vertices.Length; ++i)
 		{
 			var wVertex = localToWorld.MultiplyPoint(vertices[i]);
 			var sqDistance = (wVertex - wPoint).sqrMagnitude;
 			if (sqDistance < minDistance)
 			{
+				wGravityPoint = wVertex;
 				minDistance = sqDistance;
 				minIdx = i;
 			}
@@ -182,6 +195,12 @@ public class GroundModule : BaseModule
 		}
 
 		normal = -mesh.normals[minIdx];
+		
+		if (drawDebugGravity)
+		{
+			Debug.DrawLine(wGravityPoint, wGravityPoint - normal * 3f, Color.cyan);
+		}
+
 		return true;
 	}
 
@@ -200,7 +219,10 @@ public class GroundModule : BaseModule
 			{
 				gp.Found = true;
 				gp.Position = hit.point;
-				Debug.DrawLine(transform.position, hit.point);
+				if (drawDebugGroundPosition)
+				{
+					Debug.DrawLine(transform.position, hit.point);
+				}
 			}
 
 			groundPositionArray[i] = gp;
@@ -244,7 +266,11 @@ public class GroundModule : BaseModule
 			isValid = false;
 			return;
 		}
-		Debug.DrawLine(transform.position, transform.position + gravity * 3, Color.blue);
+		if (drawDebugGravity)
+		{
+			Debug.DrawLine(transform.position, transform.position + gravity * 3, Color.blue);			
+		}
+		
 
 
 		UpdateGroundPositionArray(transform);
@@ -255,6 +281,14 @@ public class GroundModule : BaseModule
 		{
 			up = Vector3.Cross(forward, right);
 		}
+
+		//outRotation = QuaternionUtil.SmoothDamp(transform.rotation, Quaternion.FromToRotation(-transform.up, gravity), ref gravityRotationDerivative, gravitySmoothTime);
+		outRotation = Quaternion.FromToRotation(-transform.up, gravity);
+	}
+
+	public void ApplyTransform(Transform transform)
+	{
+		transform.rotation = outRotation * transform.rotation;
 	}
 
 	public GroundPosition this[int index] {
@@ -292,7 +326,7 @@ public class Racer_Behaviour : MonoBehaviour
 			gravityModule.Update(transform, center.Position);
 		}
 
-		rollModule.Update(groundModule.forward, transform.localEulerAngles.z);
+		rollModule.Update(transform, groundModule);
 		yawModule.Update(-groundModule.gravity, rollModule.OutNormalizedRoll);
 		pichModule.Update(transform.forward, groundModule.forward);
 		moveModule.Update(transform.forward);
