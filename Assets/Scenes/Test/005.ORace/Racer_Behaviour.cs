@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Collections;
+using static TMPro.SpriteAssetUtilities.TexturePacker_JsonArray;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -14,10 +15,6 @@ public class BaseModule
 	public bool enable = true;
 }
 
-public interface IApplyTransformModule
-{
-	void ApplyTransform(Transform transform);
-}
 
 [System.Serializable]
 public class GravityModule : BaseModule
@@ -28,11 +25,12 @@ public class GravityModule : BaseModule
 
 	private Vector3 verticalVelocity;
 
-	public void Update(Transform transform, Vector3 groundPoint)
+	public void Update(Transform transform, GroundModule ground)
 	{
 		if (!enable)
 			return;
 
+		var groundPoint = ground[GroundModule.CenterIndex].Position;
 		var groundDir = (groundPoint - transform.position).normalized;
 		var hoverTarget = groundPoint - groundDir * hoverHeight;
 		transform.localPosition = Vector3.SmoothDamp(transform.localPosition, hoverTarget, ref verticalVelocity, downAltitudeSmooth, verticalMaxSpeed);
@@ -40,63 +38,52 @@ public class GravityModule : BaseModule
 }
 
 [System.Serializable]
-public class RollModule : BaseModule, IApplyTransformModule
+public class RollModule : BaseModule
 {
 	[Range(0, 1f)] public float rollSmooth = 1f;
 	[Range(10, 90f)] public float maxAngle = 45f;
 	[Range(-1, 1)] public float input = 0f;
 
-	public Quaternion OutRotation;
 	public float OutNormalizedRoll { get; private set; }
 
-	public float groundAngle = 0f;
-	public float targetAngle = 0f;
-
-	private float currentVelocity;
-
-	public void ApplyTransform(Transform transform)
+	public void Update(Transform transform)
 	{
-		transform.rotation = OutRotation * transform.rotation;
-	}
+		if (!enable)
+			return;
 
-	public void Update(Transform transform, GroundModule groundModule)
-	{
 		var hInputAxis = input;
 		if (hInputAxis == 0)
 		{
 			hInputAxis = Input.GetAxis("Horizontal");
 		}
 
+		var targetUp = Quaternion.AngleAxis(-hInputAxis * maxAngle, transform.forward) * transform.up;
+		Debug.DrawLine(transform.position, transform.position + targetUp * 2, Color.magenta);
 
-
-		//groundAngle = Vector3.SignedAngle(groundModule.right, gr.right, Vector3.Cross());
-		//targetAngle = -hInputAxis * maxAngle + groundAngle;
-		//var currentAngleStep = Mathf.SmoothDampAngle(transform.localEulerAngles.z, targetAngle, ref currentVelocity, rollSmooth);
-		//OutRotation = Quaternion.AngleAxis(Mathf.DeltaAngle(currentAngleStep, targetAngle), transform.forward);
+		var rot = Quaternion.FromToRotation(transform.up, targetUp);
 		OutNormalizedRoll = hInputAxis;
+
+		transform.rotation = rot * transform.rotation;
 	}
 }
 
 [System.Serializable]
-public class YawModule : BaseModule, IApplyTransformModule
+public class YawModule : BaseModule
 {
 	[Range(0, 180)] public float angularSpeed = 100f;
-	
-	public Quaternion OutRotation { get; private set; }
 
-	public void ApplyTransform(Transform transform)
+	public void Update(Transform transform, RollModule roll)
 	{
-		transform.rotation = OutRotation * transform.rotation;
-	}
+		if (!enable)
+			return;
 
-	public void Update(Vector3 groundUp, float steering)
-	{
-		OutRotation = Quaternion.AngleAxis(angularSpeed * Time.deltaTime * steering, groundUp);
+		var rot = Quaternion.AngleAxis(angularSpeed * Time.deltaTime * roll.OutNormalizedRoll, transform.up);
+		transform.rotation = rot * transform.rotation;
 	}
 }
 
 [System.Serializable]
-public class PitchModule : BaseModule, IApplyTransformModule
+public class PitchModule : BaseModule
 {
 	[Range(0, 1f)] public float smooth = 1f;
 	[Range(0, 50f)] public float maxSpeed = 1f;
@@ -105,44 +92,36 @@ public class PitchModule : BaseModule, IApplyTransformModule
 
 	public Quaternion OutRotation { get; private set; }
 
-	public void ApplyTransform(Transform transform)
-	{
-		transform.rotation = OutRotation * transform.rotation;
-	}
-
-	public void Update(Vector3 forward, Vector3 groundForward)
+	public void Update(Transform transform, Vector3 forward, Vector3 groundForward)
 	{
 		var newForward = Vector3.SmoothDamp(forward, groundForward, ref velocity, smooth, maxSpeed);
 		OutRotation = Quaternion.FromToRotation(forward, newForward);
+		transform.rotation = OutRotation * transform.rotation;
 	}
 }
 
 [System.Serializable]
-public class MoveModule : BaseModule, IApplyTransformModule
+public class MoveModule : BaseModule
 {
 	[Range(0, 50f)] public float maxSpeed = 1f;
 
-	public Vector3 Translation { get; private set; }
-
-	public void ApplyTransform(Transform transform)
+	public void Update(Transform transform)
 	{
-		transform.position += Translation;
-	}
-
-	public void Update(Vector3 forward)
-	{
-		Translation = forward * maxSpeed * Time.deltaTime;
+		if (!enable)
+			return;
+		var translation = transform.forward * maxSpeed * Time.deltaTime;
+		transform.position += translation;
 	}
 }
 
 [System.Serializable]
-public class GroundModule : BaseModule, IApplyTransformModule
+public class GroundModule : BaseModule
 {
 	public bool isValid = false;
 	public Vector3 forward;
 	public Vector3 right;
 	public Vector3 up;
-	public Vector3 gravity;	
+	public Vector3 gravity;
 
 	public static int FrontIndex = 0;
 	public static int CenterIndex = 1;
@@ -169,8 +148,7 @@ public class GroundModule : BaseModule, IApplyTransformModule
 		new GroundPosition{ Found = false, Position = Vector3.zero, Offset = Vector3.left }
 	};
 	private Quaternion gravityRotationDerivative;
-	[Range(0, 1f)] public float gravitySmoothTime;
-	private Quaternion outRotation;
+	public float gravityRotationSpeed = 100f;
 
 	bool FindGravityAtWorldPoint(Mesh mesh, Vector3 wPoint, Matrix4x4 localToWorld, ref Vector3 normal)
 	{
@@ -195,7 +173,7 @@ public class GroundModule : BaseModule, IApplyTransformModule
 		}
 
 		normal = -mesh.normals[minIdx];
-		
+
 		if (drawDebugGravity)
 		{
 			Debug.DrawLine(wGravityPoint, wGravityPoint - normal * 3f, Color.cyan);
@@ -257,7 +235,7 @@ public class GroundModule : BaseModule, IApplyTransformModule
 		right = (gpRight.Position - gpLeft.Position).normalized;
 		return true;
 	}
-
+	public bool newRotation = false;
 	public void Update(Transform transform, Mesh worldMesh, Matrix4x4 localToWorld)
 	{
 
@@ -268,9 +246,9 @@ public class GroundModule : BaseModule, IApplyTransformModule
 		}
 		if (drawDebugGravity)
 		{
-			Debug.DrawLine(transform.position, transform.position + gravity * 3, Color.blue);			
+			Debug.DrawLine(transform.position, transform.position + gravity * 3, Color.blue);
 		}
-		
+
 
 
 		UpdateGroundPositionArray(transform);
@@ -283,15 +261,20 @@ public class GroundModule : BaseModule, IApplyTransformModule
 		}
 
 		//outRotation = QuaternionUtil.SmoothDamp(transform.rotation, Quaternion.FromToRotation(-transform.up, gravity), ref gravityRotationDerivative, gravitySmoothTime);
-		outRotation = Quaternion.FromToRotation(-transform.up, gravity);
+		var outRotation = Quaternion.FromToRotation(-transform.up, gravity);
+		if (newRotation)
+		{
+			transform.rotation = Quaternion.RotateTowards(transform.rotation,  outRotation * transform.rotation, Time.deltaTime * gravityRotationSpeed);
+
+		}
+		else
+		{
+			transform.rotation = outRotation * transform.rotation;
+		}
 	}
 
-	public void ApplyTransform(Transform transform)
+	public GroundPosition this[int index]
 	{
-		transform.rotation = outRotation * transform.rotation;
-	}
-
-	public GroundPosition this[int index] {
 		get => groundPositionArray[index];
 	}
 }
@@ -313,37 +296,23 @@ public class Racer_Behaviour : MonoBehaviour
 	private void Start()
 	{
 		worldMesh = worldMeshObj.GetComponent<MeshFilter>().sharedMesh;
-		modules = new BaseModule [] { gravityModule, rollModule, yawModule, groundModule, pichModule, moveModule };
+		modules = new BaseModule[] { gravityModule, rollModule, yawModule, groundModule, pichModule, moveModule };
 	}
 
 	void Update()
 	{
 		groundModule.Update(transform, worldMesh, worldMeshObj.transform.localToWorldMatrix);
-
-		var center = groundModule[GroundModule.CenterIndex];
-		if (center.Found)
+		if (!groundModule.isValid)
 		{
-			gravityModule.Update(transform, center.Position);
+			Debug.LogError("ground not valid!");
+			return;
 		}
 
-		rollModule.Update(transform, groundModule);
-		yawModule.Update(-groundModule.gravity, rollModule.OutNormalizedRoll);
-		pichModule.Update(transform.forward, groundModule.forward);
-		moveModule.Update(transform.forward);
-		
-		for (int i = 0; i < modules.Length; i++)
-		{
-			var module = modules[i];
-			if (!module.enable)
-			{
-				continue;
-			}
-			var applyTransform = module as IApplyTransformModule;
-			if (applyTransform != null)
-			{
-				applyTransform.ApplyTransform(transform);
-			}
-		}
+		gravityModule.Update(transform, groundModule);
+		rollModule.Update(transform);
+		yawModule.Update(transform, rollModule);
+		//pichModule.Update(transform, transform.forward, groundModule.forward); ;
+		moveModule.Update(transform);
 	}
 
 #if UNITY_EDITOR

@@ -158,12 +158,12 @@ MonoBehaviour:
     verticalMaxSpeed: 5
     hoverHeight: 2
   rollModule:
-    enable: 0
+    enable: 1
     rollSmooth: 0.2
     maxAngle: 45
     input: 0
   yawModule:
-    enable: 0
+    enable: 1
     angularSpeed: 180
   groundModule:
     enable: 1
@@ -172,12 +172,16 @@ MonoBehaviour:
     right: {x: 0, y: 0, z: 0}
     up: {x: 0, y: 0, z: 0}
     gravity: {x: 0, y: 0, z: 0}
+    drawDebugGravity: 1
+    drawDebugGroundPosition: 0
+    gravityRotationSpeed: 100
+    newRotation: 0
   pichModule:
     enable: 0
     smooth: 0.2
     maxSpeed: 10
   moveModule:
-    enable: 0
+    enable: 1
     maxSpeed: 5
   worldMeshObj: {fileID: 841165729}
 --- !u!4 &222953076
@@ -187,7 +191,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 222953074}
-  m_LocalRotation: {x: -0, y: -0, z: 0.038500097, w: 0.9992586}
+  m_LocalRotation: {x: 0.027224412, y: 0.70658255, z: 0.027224412, w: 0.70658255}
   m_LocalPosition: {x: -0.65, y: -18.08, z: -94.302}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
@@ -196,7 +200,7 @@ Transform:
   - {fileID: 1875017725}
   m_Father: {fileID: 0}
   m_RootOrder: 2
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 4.413}
+  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 4.413}
 --- !u!1001 &417677896
 PrefabInstance:
   m_ObjectHideFlags: 0

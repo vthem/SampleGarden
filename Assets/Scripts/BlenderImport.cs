@@ -84,8 +84,8 @@ namespace TSW.MeshTool
 			//			}
 
 			//recalculate other relevant mesh data
-			//			mesh.RecalculateNormals();
-			//			mesh.RecalculateBounds();
+			mesh.RecalculateNormals();
+			mesh.RecalculateBounds();
 		}
 
 		private delegate UnityEngine.Object CreateAssetDelegate();
