@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Unity.Collections;
 using static TMPro.SpriteAssetUtilities.TexturePacker_JsonArray;
+using _013_TesselatedWorm;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -22,18 +23,85 @@ public class GravityModule : BaseModule
 	public float downAltitudeSmooth = 1f;
 	public float verticalMaxSpeed = 1f;
 	public float hoverHeight = 0.5f;
+	public Vector3 outGravity;
+	public bool drawDebugGravity = false;
+
+	public bool outIsValid;
+	public string outErrorReason;
+	public Vector3 outGroundPoint;
 
 	private Vector3 verticalVelocity;
 
-	public void Update(Transform transform, GroundModule ground)
+
+	bool FindGravityAtWorldPoint(Mesh mesh, Vector3 wPoint, Matrix4x4 localToWorld, ref Vector3 normal)
+	{
+		var vertices = mesh.vertices;
+		float minDistance = float.MaxValue;
+		int minIdx = -1;
+		Vector3 wGravityPoint = Vector3.zero;
+		for (int i = 0; i < vertices.Length; ++i)
+		{
+			var wVertex = localToWorld.MultiplyPoint(vertices[i]);
+			var sqDistance = (wVertex - wPoint).sqrMagnitude;
+			if (sqDistance < minDistance)
+			{
+				wGravityPoint = wVertex;
+				minDistance = sqDistance;
+				minIdx = i;
+			}
+		}
+		if (minIdx < 0)
+		{
+			return false;
+		}
+
+		normal = -mesh.normals[minIdx];
+
+		if (drawDebugGravity)
+		{
+			Debug.DrawLine(wGravityPoint, wGravityPoint - normal * 3f, Color.cyan);
+		}
+
+		return true;
+	}
+
+	public void Update(Transform transform, Mesh worldMesh, Matrix4x4 localToWorld)
 	{
 		if (!enable)
+		{
+			outIsValid = true;
 			return;
+		}
 
-		var groundPoint = ground[GroundModule.CenterIndex].Position;
-		var groundDir = (groundPoint - transform.position).normalized;
-		var hoverTarget = groundPoint - groundDir * hoverHeight;
+		outErrorReason = "not initialized";
+		outIsValid = false;
+
+		if (!FindGravityAtWorldPoint(worldMesh, transform.position, localToWorld, ref outGravity))
+		{
+			outErrorReason = "Gravity not found";
+			return;
+		}
+		if (drawDebugGravity)
+		{
+			Debug.DrawLine(transform.position, transform.position + outGravity * 3, Color.blue);
+		}
+
+
+		//var groundPoint = ground[GroundModule.CenterIndex].Position;
+		//var groundDir = (groundPoint - transform.position).normalized;
+
+		Ray r = new Ray(transform.position, outGravity);
+		if (!Physics.Raycast(r, out RaycastHit hit, 1000f))
+		{
+			outErrorReason = "Ground not found";
+			return;
+		}
+		outGroundPoint = hit.point;
+
+		var hoverTarget = outGroundPoint - outGravity * hoverHeight;
 		transform.localPosition = Vector3.SmoothDamp(transform.localPosition, hoverTarget, ref verticalVelocity, downAltitudeSmooth, verticalMaxSpeed);
+
+		outIsValid = true;
 	}
 }
 
@@ -117,11 +185,10 @@ public class MoveModule : BaseModule
 [System.Serializable]
 public class GroundModule : BaseModule
 {
-	public bool isValid = false;
+	public bool outIsValid = false;
 	public Vector3 forward;
 	public Vector3 right;
 	public Vector3 up;
-	public Vector3 gravity;
 
 	public static int FrontIndex = 0;
 	public static int CenterIndex = 1;
@@ -129,7 +196,6 @@ public class GroundModule : BaseModule
 	public static int RightIndex = 3;
 	public static int LeftIndex = 4;
 
-	public bool drawDebugGravity = false;
 	public bool drawDebugGroundPosition = false;
 
 	public struct GroundPosition
@@ -150,41 +216,9 @@ public class GroundModule : BaseModule
 	private Quaternion gravityRotationDerivative;
 	public float gravityRotationSpeed = 100f;
 
-	bool FindGravityAtWorldPoint(Mesh mesh, Vector3 wPoint, Matrix4x4 localToWorld, ref Vector3 normal)
+	void UpdateGroundPositionArray(Transform transform, Vector3 gravity)
 	{
-		var vertices = mesh.vertices;
-		float minDistance = float.MaxValue;
-		int minIdx = -1;
-		Vector3 wGravityPoint = Vector3.zero;
-		for (int i = 0; i < vertices.Length; ++i)
-		{
-			var wVertex = localToWorld.MultiplyPoint(vertices[i]);
-			var sqDistance = (wVertex - wPoint).sqrMagnitude;
-			if (sqDistance < minDistance)
-			{
-				wGravityPoint = wVertex;
-				minDistance = sqDistance;
-				minIdx = i;
-			}
-		}
-		if (minIdx < 0)
-		{
-			return false;
-		}
-
-		normal = -mesh.normals[minIdx];
-
-		if (drawDebugGravity)
-		{
-			Debug.DrawLine(wGravityPoint, wGravityPoint - normal * 3f, Color.cyan);
-		}
-
-		return true;
-	}
-
-	void UpdateGroundPositionArray(Transform transform)
-	{
-		isValid = false;
+		outIsValid = false;
 
 		for (int i = 0; i < groundPositionArray.Length; ++i)
 		{
@@ -236,32 +270,19 @@ public class GroundModule : BaseModule
 		return true;
 	}
 	public bool newRotation = false;
-	public void Update(Transform transform, Mesh worldMesh, Matrix4x4 localToWorld)
+	public void Update(Transform transform, GravityModule gravityModule)
 	{
+		UpdateGroundPositionArray(transform, gravityModule.outGravity);
 
-		if (!FindGravityAtWorldPoint(worldMesh, transform.position, localToWorld, ref gravity))
-		{
-			isValid = false;
-			return;
-		}
-		if (drawDebugGravity)
-		{
-			Debug.DrawLine(transform.position, transform.position + gravity * 3, Color.blue);
-		}
+		outIsValid = TryComputeForward() && TryComputeRight();
 
-
-
-		UpdateGroundPositionArray(transform);
-
-		isValid = TryComputeForward() && TryComputeRight();
-
-		if (isValid)
+		if (outIsValid)
 		{
 			up = Vector3.Cross(forward, right);
 		}
 
 		//outRotation = QuaternionUtil.SmoothDamp(transform.rotation, Quaternion.FromToRotation(-transform.up, gravity), ref gravityRotationDerivative, gravitySmoothTime);
-		var outRotation = Quaternion.FromToRotation(-transform.up, gravity);
+		var outRotation = Quaternion.FromToRotation(-transform.up, gravityModule.outGravity);
 		if (newRotation)
 		{
 			transform.rotation = Quaternion.RotateTowards(transform.rotation,  outRotation * transform.rotation, Time.deltaTime * gravityRotationSpeed);
@@ -301,14 +322,20 @@ public class Racer_Behaviour : MonoBehaviour
 
 	void Update()
 	{
-		groundModule.Update(transform, worldMesh, worldMeshObj.transform.localToWorldMatrix);
-		if (!groundModule.isValid)
+		gravityModule.Update(transform, worldMesh, worldMeshObj.transform.localToWorldMatrix);
+		if (!gravityModule.outIsValid)
 		{
-			Debug.LogError("ground not valid!");
+			Debug.LogError($"gravityModule not valid! reason:{gravityModule.outErrorReason}");
 			return;
 		}
 
-		gravityModule.Update(transform, groundModule);
+		groundModule.Update(transform, gravityModule);
+		if (!groundModule.outIsValid)
+		{
+			Debug.LogError("! not valid!");
+			return;
+		}
+
 		rollModule.Update(transform);
 		yawModule.Update(transform, rollModule);
 		//pichModule.Update(transform, transform.forward, groundModule.forward); ;
