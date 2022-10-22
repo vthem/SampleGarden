@@ -26,14 +26,16 @@ public class GravityModule : BaseModule
 	public float gravityRotationSpeed = 100f;
 	public bool drawDebugGravity = false;
 	public bool newRotation = false;
+	public float gravitySmoothTime = .5f;
 
 	public Vector3 outGravity;
+	public Vector3 outGravitySmooth;
 	public bool outIsValid;	
 	public string outErrorReason;
 	public Vector3 outGroundPoint;
 
 	private Vector3 verticalVelocity;
-
+	private Vector3 gravityVelocity;
 
 	bool FindGravityAtWorldPoint(Mesh mesh, Vector3 wPoint, Matrix4x4 localToWorld, ref Vector3 normal)
 	{
@@ -88,6 +90,7 @@ public class GravityModule : BaseModule
 			Debug.DrawLine(transform.position, transform.position + outGravity * 3, Color.blue);
 		}
 
+		outGravitySmooth = Vector3.SmoothDamp(outGravitySmooth, outGravity, ref gravityVelocity, gravitySmoothTime);
 
 		//var groundPoint = ground[GroundModule.CenterIndex].Position;
 		//var groundDir = (groundPoint - transform.position).normalized;
@@ -103,7 +106,7 @@ public class GravityModule : BaseModule
 		var hoverTarget = outGroundPoint - outGravity * hoverHeight;
 		transform.localPosition = Vector3.SmoothDamp(transform.localPosition, hoverTarget, ref verticalVelocity, downAltitudeSmooth, verticalMaxSpeed);
 
-		var outRotation = Quaternion.FromToRotation(-transform.up, outGravity);
+		var outRotation = Quaternion.FromToRotation(-transform.up, outGravitySmooth);
 
 
 		if (newRotation)
@@ -115,6 +118,7 @@ public class GravityModule : BaseModule
 		{
 			transform.rotation = outRotation * transform.rotation;
 		}
+
 
 		outIsValid = true;
 	}

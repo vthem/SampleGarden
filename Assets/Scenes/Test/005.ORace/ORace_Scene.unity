@@ -157,8 +157,12 @@ MonoBehaviour:
     downAltitudeSmooth: 0.2
     verticalMaxSpeed: 5
     hoverHeight: 0.4
-    outGravity: {x: 0, y: 0, z: 0}
+    gravityRotationSpeed: 100
     drawDebugGravity: 0
+    newRotation: 0
+    gravitySmoothTime: 0.5
+    outGravity: {x: 0, y: 0, z: 0}
+    outGravitySmooth: {x: 0, y: 0, z: 0}
     outIsValid: 0
     outErrorReason: 
     outGroundPoint: {x: 0, y: 0, z: 0}
@@ -170,22 +174,13 @@ MonoBehaviour:
   yawModule:
     enable: 1
     angularSpeed: 180
-  groundModule:
-    enable: 1
-    outIsValid: 0
-    forward: {x: 0, y: 0, z: 0}
-    right: {x: 0, y: 0, z: 0}
-    up: {x: 0, y: 0, z: 0}
-    drawDebugGroundPosition: 0
-    gravityRotationSpeed: 100
-    newRotation: 0
   pichModule:
     enable: 0
     smooth: 0.2
     maxSpeed: 10
   moveModule:
-    enable: 0
-    maxSpeed: 5
+    enable: 1
+    maxSpeed: 7
   worldMeshObj: {fileID: 841165729}
 --- !u!4 &222953076
 Transform:
@@ -490,7 +485,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   racer: {fileID: 222953075}
-  eulerOffset: {x: 0, y: 0, z: 0}
+  eulerOffset: {x: -25, y: 0, z: 25}
 --- !u!1 &1670208348
 GameObject:
   m_ObjectHideFlags: 0
