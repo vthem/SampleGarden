@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Camera_Behaviour : MonoBehaviour
 {
-	public Transform target;
+	public Racer_Behaviour racer;
 
 	public Vector3 lookAtTargetVector;
 	public Vector3 positionTargetVector;
@@ -24,7 +24,7 @@ public class Camera_Behaviour : MonoBehaviour
 	{
 		get
 		{
-			return target.transform.position + target.TransformVector(positionTargetVector);
+			return racer.transform.position + racer.transform.TransformVector(positionTargetVector);
 		}
 	}
 
@@ -32,7 +32,7 @@ public class Camera_Behaviour : MonoBehaviour
 	{
 		get
 		{
-			return target.transform.position + target.TransformVector(lookAtTargetVector);
+			return racer.transform.position + racer.transform.TransformVector(lookAtTargetVector);
 		}
 	}
 
@@ -45,7 +45,7 @@ public class Camera_Behaviour : MonoBehaviour
     {
 		transform.position = Vector3.SmoothDamp(transform.position, WorldPositionTargetPosition, ref positionVelocity, positionSmoothTime, postionMaxSpeed);
 		currentLookAtTargetPosition = Vector3.SmoothDamp(currentLookAtTargetPosition, WorldLookAtTargetPosition, ref lookAtVelocity, lookAtSmoothTime, lookAtMaxSpeed);
-		transform.LookAt(currentLookAtTargetPosition);
+		transform.LookAt(currentLookAtTargetPosition, -racer.gravityModule.outGravitySmooth);
 	}
 
 	[ContextMenu("Force Position & Rotation")]
