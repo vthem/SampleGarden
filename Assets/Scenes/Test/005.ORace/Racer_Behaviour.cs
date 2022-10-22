@@ -23,10 +23,12 @@ public class GravityModule : BaseModule
 	public float downAltitudeSmooth = 1f;
 	public float verticalMaxSpeed = 1f;
 	public float hoverHeight = 0.5f;
-	public Vector3 outGravity;
+	public float gravityRotationSpeed = 100f;
 	public bool drawDebugGravity = false;
+	public bool newRotation = false;
 
-	public bool outIsValid;
+	public Vector3 outGravity;
+	public bool outIsValid;	
 	public string outErrorReason;
 	public Vector3 outGroundPoint;
 
@@ -78,7 +80,7 @@ public class GravityModule : BaseModule
 
 		if (!FindGravityAtWorldPoint(worldMesh, transform.position, localToWorld, ref outGravity))
 		{
-			outErrorReason = "Gravity not found";
+			outErrorReason = "gravity not found";
 			return;
 		}
 		if (drawDebugGravity)
@@ -93,13 +95,26 @@ public class GravityModule : BaseModule
 		Ray r = new Ray(transform.position, outGravity);
 		if (!Physics.Raycast(r, out RaycastHit hit, 1000f))
 		{
-			outErrorReason = "Ground not found";
+			outErrorReason = "ground not found";
 			return;
 		}
 		outGroundPoint = hit.point;
 
 		var hoverTarget = outGroundPoint - outGravity * hoverHeight;
 		transform.localPosition = Vector3.SmoothDamp(transform.localPosition, hoverTarget, ref verticalVelocity, downAltitudeSmooth, verticalMaxSpeed);
+
+		var outRotation = Quaternion.FromToRotation(-transform.up, outGravity);
+
+
+		if (newRotation)
+		{
+			transform.rotation = Quaternion.RotateTowards(transform.rotation, outRotation * transform.rotation, Time.deltaTime * gravityRotationSpeed);
+
+		}
+		else
+		{
+			transform.rotation = outRotation * transform.rotation;
+		}
 
 		outIsValid = true;
 	}
@@ -182,130 +197,11 @@ public class MoveModule : BaseModule
 	}
 }
 
-[System.Serializable]
-public class GroundModule : BaseModule
-{
-	public bool outIsValid = false;
-	public Vector3 forward;
-	public Vector3 right;
-	public Vector3 up;
-
-	public static int FrontIndex = 0;
-	public static int CenterIndex = 1;
-	public static int BackIndex = 2;
-	public static int RightIndex = 3;
-	public static int LeftIndex = 4;
-
-	public bool drawDebugGroundPosition = false;
-
-	public struct GroundPosition
-	{
-		public bool Found { get; set; }
-		public Vector3 Position { get; set; }
-		public Vector3 Offset { get; set; }
-	}
-
-	private GroundPosition[] groundPositionArray =
-	{
-		new GroundPosition{ Found = false, Position = Vector3.zero, Offset = Vector3.forward },
-		new GroundPosition{ Found = false, Position = Vector3.zero, Offset = Vector3.back },
-		new GroundPosition{ Found = false, Position = Vector3.zero, Offset = Vector3.zero },
-		new GroundPosition{ Found = false, Position = Vector3.zero, Offset = Vector3.right },
-		new GroundPosition{ Found = false, Position = Vector3.zero, Offset = Vector3.left }
-	};
-	private Quaternion gravityRotationDerivative;
-	public float gravityRotationSpeed = 100f;
-
-	void UpdateGroundPositionArray(Transform transform, Vector3 gravity)
-	{
-		outIsValid = false;
-
-		for (int i = 0; i < groundPositionArray.Length; ++i)
-		{
-			var gp = groundPositionArray[i];
-			gp.Found = false;
-			gp.Position = Vector3.zero;
-
-			Ray r = new Ray(transform.position + transform.TransformVector(gp.Offset), gravity);
-			if (Physics.Raycast(r, out RaycastHit hit, 1000f))
-			{
-				gp.Found = true;
-				gp.Position = hit.point;
-				if (drawDebugGroundPosition)
-				{
-					Debug.DrawLine(transform.position, hit.point);
-				}
-			}
-
-			groundPositionArray[i] = gp;
-		}
-	}
-
-	private bool TryComputeForward()
-	{
-		var gpFront = groundPositionArray[FrontIndex];
-		var gpBack = groundPositionArray[BackIndex];
-
-		if (!gpFront.Found || !gpBack.Found)
-		{
-			forward = Vector3.zero;
-			return false;
-		}
-
-		forward = (gpFront.Position - gpBack.Position).normalized;
-		return true;
-	}
-	private bool TryComputeRight()
-	{
-		var gpRight = groundPositionArray[RightIndex];
-		var gpLeft = groundPositionArray[LeftIndex];
-
-		if (!gpRight.Found || !gpLeft.Found)
-		{
-			right = Vector3.zero;
-			return false;
-		}
-
-		right = (gpRight.Position - gpLeft.Position).normalized;
-		return true;
-	}
-	public bool newRotation = false;
-	public void Update(Transform transform, GravityModule gravityModule)
-	{
-		UpdateGroundPositionArray(transform, gravityModule.outGravity);
-
-		outIsValid = TryComputeForward() && TryComputeRight();
-
-		if (outIsValid)
-		{
-			up = Vector3.Cross(forward, right);
-		}
-
-		//outRotation = QuaternionUtil.SmoothDamp(transform.rotation, Quaternion.FromToRotation(-transform.up, gravity), ref gravityRotationDerivative, gravitySmoothTime);
-		var outRotation = Quaternion.FromToRotation(-transform.up, gravityModule.outGravity);
-		if (newRotation)
-		{
-			transform.rotation = Quaternion.RotateTowards(transform.rotation,  outRotation * transform.rotation, Time.deltaTime * gravityRotationSpeed);
-
-		}
-		else
-		{
-			transform.rotation = outRotation * transform.rotation;
-		}
-	}
-
-	public GroundPosition this[int index]
-	{
-		get => groundPositionArray[index];
-	}
-}
-
 public class Racer_Behaviour : MonoBehaviour
 {
 	public GravityModule gravityModule;
 	public RollModule rollModule;
 	public YawModule yawModule;
-	public GroundModule groundModule;
 	public PitchModule pichModule;
 	public MoveModule moveModule;
 
@@ -317,7 +213,7 @@ public class Racer_Behaviour : MonoBehaviour
 	private void Start()
 	{
 		worldMesh = worldMeshObj.GetComponent<MeshFilter>().sharedMesh;
-		modules = new BaseModule[] { gravityModule, rollModule, yawModule, groundModule, pichModule, moveModule };
+		modules = new BaseModule[] { gravityModule, rollModule, yawModule, pichModule, moveModule };
 	}
 
 	void Update()
@@ -326,13 +222,6 @@ public class Racer_Behaviour : MonoBehaviour
 		if (!gravityModule.outIsValid)
 		{
 			Debug.LogError($"gravityModule not valid! reason:{gravityModule.outErrorReason}");
-			return;
-		}
-
-		groundModule.Update(transform, gravityModule);
-		if (!groundModule.outIsValid)
-		{
-			Debug.LogError("! not valid!");
 			return;
 		}
 
