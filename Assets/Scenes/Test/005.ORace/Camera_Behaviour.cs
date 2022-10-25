@@ -41,11 +41,15 @@ public class Camera_Behaviour : MonoBehaviour
 		ForcePositionAndRotation();
 	}
 
-	void LateUpdate()
+	void Update()
     {
-		transform.position = Vector3.SmoothDamp(transform.position, WorldPositionTargetPosition, ref positionVelocity, positionSmoothTime, postionMaxSpeed);
-		currentLookAtTargetPosition = Vector3.SmoothDamp(currentLookAtTargetPosition, WorldLookAtTargetPosition, ref lookAtVelocity, lookAtSmoothTime, lookAtMaxSpeed);
-		transform.LookAt(currentLookAtTargetPosition, -racer.gravityModule.outGravitySmooth);
+		transform.position = Vector3.SmoothDamp(transform.position, WorldPositionTargetPosition, ref positionVelocity, positionSmoothTime/*, postionMaxSpeed*/);
+		//currentLookAtTargetPosition = Vector3.SmoothDamp(currentLookAtTargetPosition, WorldLookAtTargetPosition, ref lookAtVelocity, lookAtSmoothTime/*, lookAtMaxSpeed*/);
+		//transform.LookAt(currentLookAtTargetPosition, -racer.gravityModule.outGravitySmooth);
+		//Debug.DrawLine(transform.position, currentLookAtTargetPosition, Color.yellow);
+		//Debug.DrawLine(transform.position, WorldLookAtTargetPosition, Color.magenta);
+		//transform.position = WorldPositionTargetPosition;
+		transform.LookAt(WorldLookAtTargetPosition, -racer.gravityModule.outBarycentricGravity);
 	}
 
 	[ContextMenu("Force Position & Rotation")]

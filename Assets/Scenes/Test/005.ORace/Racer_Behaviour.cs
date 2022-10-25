@@ -30,46 +30,32 @@ public class GravityModule : BaseModule
 
 	public Vector3 outGravity;
 	public Vector3 outGravitySmooth;
+	public Vector3 outBarycentricGravity;
 	public bool outIsValid;	
 	public string outErrorReason;
 	public Vector3 outGroundPoint;
 
+	public World_Behaviour world;
+
 	private Vector3 verticalVelocity;
 	private Vector3 gravityVelocity;
 
-	bool FindGravityAtWorldPoint(Mesh mesh, Vector3 wPoint, Matrix4x4 localToWorld, ref Vector3 normal)
+	public void ForcePositionGround(Transform transform)
 	{
-		var vertices = mesh.vertices;
-		float minDistance = float.MaxValue;
-		int minIdx = -1;
-		Vector3 wGravityPoint = Vector3.zero;
-		for (int i = 0; i < vertices.Length; ++i)
+		World_Behaviour.GravityData gravity = default;
+		if (!world.TryFindGravityAt(transform.position, ref gravity))
 		{
-			var wVertex = localToWorld.MultiplyPoint(vertices[i]);
-			var sqDistance = (wVertex - wPoint).sqrMagnitude;
-			if (sqDistance < minDistance)
-			{
-				wGravityPoint = wVertex;
-				minDistance = sqDistance;
-				minIdx = i;
-			}
+			return;
 		}
-		if (minIdx < 0)
+		Ray r = new Ray(transform.position, outGravity);
+		if (!Physics.Raycast(r, out RaycastHit hit))
 		{
-			return false;
+			return;
 		}
-
-		normal = -mesh.normals[minIdx];
-
-		if (drawDebugGravity)
-		{
-			Debug.DrawLine(wGravityPoint, wGravityPoint - normal * 3f, Color.cyan);
-		}
-
-		return true;
+		transform.position = hit.point;
 	}
 
-	public void Update(Transform transform, Mesh worldMesh, Matrix4x4 localToWorld)
+	public void Update(Transform transform)
 	{
 		if (!enable)
 		{
@@ -80,11 +66,14 @@ public class GravityModule : BaseModule
 		outErrorReason = "not initialized";
 		outIsValid = false;
 
-		if (!FindGravityAtWorldPoint(worldMesh, transform.position, localToWorld, ref outGravity))
+		World_Behaviour.GravityData gravity = default;
+		if (!world.TryFindGravityAt(transform.position, ref gravity))
 		{
 			outErrorReason = "gravity not found";
 			return;
 		}
+
+		outGravity = gravity.direction;
 		if (drawDebugGravity)
 		{
 			Debug.DrawLine(transform.position, transform.position + outGravity * 3, Color.blue);
@@ -96,17 +85,20 @@ public class GravityModule : BaseModule
 		//var groundDir = (groundPoint - transform.position).normalized;
 
 		Ray r = new Ray(transform.position, outGravity);
-		if (!Physics.Raycast(r, out RaycastHit hit, 1000f))
+		if (!Physics.Raycast(r, out RaycastHit hit))
 		{
 			outErrorReason = "ground not found";
 			return;
 		}
 		outGroundPoint = hit.point;
 
+		ComputeBarycentricGravity(gravity.mesh, hit);
+
+
 		var hoverTarget = outGroundPoint - outGravity * hoverHeight;
 		transform.localPosition = Vector3.SmoothDamp(transform.localPosition, hoverTarget, ref verticalVelocity, downAltitudeSmooth, verticalMaxSpeed);
 
-		var outRotation = Quaternion.FromToRotation(-transform.up, outGravitySmooth);
+		var outRotation = Quaternion.FromToRotation(-transform.up, outBarycentricGravity);
 
 
 		if (newRotation)
@@ -121,6 +113,32 @@ public class GravityModule : BaseModule
 
 
 		outIsValid = true;
+	}
+
+	private void ComputeBarycentricGravity(Mesh mesh, RaycastHit hit)
+	{
+		Vector3[] normals = mesh.normals;
+		int[] triangles = mesh.triangles;
+
+		if (hit.triangleIndex >= triangles.Length)
+		{
+			Debug.LogError("hit.triangleIndex >= triangles.Length");
+			return;
+		}
+		// Extract local space normals of the triangle we hit
+		Vector3 n0 = normals[triangles[hit.triangleIndex * 3 + 0]];
+		Vector3 n1 = normals[triangles[hit.triangleIndex * 3 + 1]];
+		Vector3 n2 = normals[triangles[hit.triangleIndex * 3 + 2]];
+
+		// interpolate using the barycentric coordinate of the hitpoint
+		Vector3 baryCenter = hit.barycentricCoordinate;
+
+		// Use barycentric coordinate to interpolate normal
+		Vector3 interpolatedNormal = n0 * baryCenter.x + n1 * baryCenter.y + n2 * baryCenter.z;
+		// normalize the interpolated normal
+		interpolatedNormal = interpolatedNormal.normalized;
+
+		outBarycentricGravity = -interpolatedNormal;
 	}
 }
 
@@ -209,20 +227,9 @@ public class Racer_Behaviour : MonoBehaviour
 	public PitchModule pichModule;
 	public MoveModule moveModule;
 
-	public GameObject worldMeshObj;
-	private Mesh worldMesh;
-
-	private BaseModule[] modules;
-
-	private void Start()
-	{
-		worldMesh = worldMeshObj.GetComponent<MeshFilter>().sharedMesh;
-		modules = new BaseModule[] { gravityModule, rollModule, yawModule, pichModule, moveModule };
-	}
-
 	void Update()
 	{
-		gravityModule.Update(transform, worldMesh, worldMeshObj.transform.localToWorldMatrix);
+		gravityModule.Update(transform);
 		if (!gravityModule.outIsValid)
 		{
 			Debug.LogError($"gravityModule not valid! reason:{gravityModule.outErrorReason}");
@@ -233,6 +240,12 @@ public class Racer_Behaviour : MonoBehaviour
 		yawModule.Update(transform, rollModule);
 		//pichModule.Update(transform, transform.forward, groundModule.forward); ;
 		moveModule.Update(transform);
+	}
+
+	[ContextMenu("AutoPlace")]
+	public void AutoPlace()
+	{
+		gravityModule.ForcePositionGround(transform);
 	}
 
 #if UNITY_EDITOR
