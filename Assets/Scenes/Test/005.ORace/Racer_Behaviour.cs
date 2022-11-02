@@ -25,7 +25,6 @@ public class GravityModule : BaseModule
 	public float hoverHeight = 0.5f;
 	public float gravityRotationSpeed = 100f;
 	public bool drawDebugGravity = false;
-	public bool newRotation = false;
 	public float gravitySmoothTime = .5f;
 
 	public Vector3 outGravity;
@@ -73,6 +72,7 @@ public class GravityModule : BaseModule
 			return;
 		}
 
+
 		outGravity = gravity.direction;
 		if (drawDebugGravity)
 		{
@@ -92,6 +92,33 @@ public class GravityModule : BaseModule
 		}
 		outGroundPoint = hit.point;
 
+		if (drawDebugGravity)
+		{
+			var mesh = gravity.mesh;
+			var triangles = mesh.triangles;
+
+			var vertices = mesh.vertices;
+
+			var v0 = gravity.gameObject.transform.TransformPoint(vertices[triangles[hit.triangleIndex * 3 + 0]]);
+			var v1 = gravity.gameObject.transform.TransformPoint(vertices[triangles[hit.triangleIndex * 3 + 1]]);
+			var v2 = gravity.gameObject.transform.TransformPoint(vertices[triangles[hit.triangleIndex * 3 + 2]]);
+
+			Debug.DrawLine(v0, v1, Color.magenta);
+			Debug.DrawLine(v1, v2, Color.magenta);
+			Debug.DrawLine(v2, v0, Color.magenta);
+
+			Vector3[] normals = mesh.normals;
+			Vector3 n0 = normals[triangles[hit.triangleIndex * 3 + 0]];
+			Vector3 n1 = normals[triangles[hit.triangleIndex * 3 + 1]];
+			Vector3 n2 = normals[triangles[hit.triangleIndex * 3 + 2]];
+
+
+			Debug.DrawLine(v0, v0 + n0, Color.yellow);
+			Debug.DrawLine(v1, v1 + n1, Color.yellow);
+			Debug.DrawLine(v2, v2 + n2, Color.yellow);
+
+		}
+
 		ComputeBarycentricGravity(gravity.mesh, hit);
 
 
@@ -99,18 +126,7 @@ public class GravityModule : BaseModule
 		transform.localPosition = Vector3.SmoothDamp(transform.localPosition, hoverTarget, ref verticalVelocity, downAltitudeSmooth, verticalMaxSpeed);
 
 		var outRotation = Quaternion.FromToRotation(-transform.up, outBarycentricGravity);
-
-
-		if (newRotation)
-		{
-			transform.rotation = Quaternion.RotateTowards(transform.rotation, outRotation * transform.rotation, Time.deltaTime * gravityRotationSpeed);
-
-		}
-		else
-		{
-			transform.rotation = outRotation * transform.rotation;
-		}
-
+		transform.rotation = outRotation * transform.rotation;
 
 		outIsValid = true;
 	}
@@ -210,12 +226,37 @@ public class MoveModule : BaseModule
 {
 	[Range(0, 50f)] public float maxSpeed = 1f;
 
-	public void Update(Transform transform)
+	public void Update(Transform transform, CollisionModule collisionModule)
 	{
 		if (!enable)
 			return;
+
 		var translation = transform.forward * maxSpeed * Time.deltaTime;
-		transform.position += translation;
+		if (collisionModule.hasHit && (collisionModule.raycastHit.point - transform.position).sqrMagnitude <= translation.sqrMagnitude)
+		{
+			transform.position = collisionModule.raycastHit.point;
+			enable = false;
+		}
+		else
+		{
+			transform.position += translation;
+		}
+	}
+}
+
+[System.Serializable]
+public class CollisionModule : BaseModule
+{
+	public bool hasHit = false;
+	public RaycastHit raycastHit;
+
+	public void Update(Transform transform)
+	{
+		hasHit = false;
+		if (Physics.Raycast(transform.position, transform.forward, out raycastHit, 50f, 1 << LayerMask.NameToLayer("Obstacle")))
+		{
+			hasHit = true;
+		}
 	}
 }
 
@@ -226,6 +267,7 @@ public class Racer_Behaviour : MonoBehaviour
 	public YawModule yawModule;
 	public PitchModule pichModule;
 	public MoveModule moveModule;
+	public CollisionModule collisionModule;
 
 	void Update()
 	{
@@ -238,8 +280,9 @@ public class Racer_Behaviour : MonoBehaviour
 
 		rollModule.Update(transform);
 		yawModule.Update(transform, rollModule);
-		//pichModule.Update(transform, transform.forward, groundModule.forward); ;
-		moveModule.Update(transform);
+		//pichModule.Update(transform, transform.forward, groundModule.forward);
+		collisionModule.Update(transform);
+		moveModule.Update(transform, collisionModule);
 	}
 
 	[ContextMenu("AutoPlace")]

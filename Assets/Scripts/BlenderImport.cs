@@ -63,10 +63,18 @@ namespace TSW.MeshTool
 		{
 			Vector3[] vertices = new Vector3[mesh.vertices.Length];
 			Vector3[] normals = new Vector3[mesh.vertices.Length];
+
+			if (mesh.vertices.Length != mesh.normals.Length)
+			{
+				Debug.LogError($"vertice count {vertices.Length} != normals count {normals.Length}");
+				return;
+			}
+			var mVertices = mesh.vertices;
+			var mNormals = mesh.normals;
 			for (int i = 0; i < vertices.Length; ++i)
 			{
-				vertices[i] = new Vector3(-mesh.vertices[i].x, mesh.vertices[i].z, mesh.vertices[i].y);
-				normals[i] = new Vector3(-mesh.normals[i].x, mesh.normals[i].z, mesh.normals[i].y);
+				vertices[i] = new Vector3(-mVertices[i].x, mVertices[i].z, mVertices[i].y);
+				normals[i] = new Vector3(-mNormals[i].x, mNormals[i].z, mNormals[i].y);
 			}
 			mesh.vertices = vertices;
 			mesh.normals = normals;
@@ -84,7 +92,7 @@ namespace TSW.MeshTool
 			//			}
 
 			//recalculate other relevant mesh data
-			mesh.RecalculateNormals();
+			//mesh.RecalculateNormals();
 			mesh.RecalculateBounds();
 		}
 

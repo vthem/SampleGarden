@@ -16,6 +16,6 @@ public class Sun_LookAt : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-		transform.forward = Quaternion.Euler(eulerOffset) * racer.gravityModule.outGravitySmooth;
+		transform.forward = Quaternion.Euler(eulerOffset) * racer.gravityModule.outBarycentricGravity;
 	}
 }

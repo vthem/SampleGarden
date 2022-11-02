@@ -8,19 +8,34 @@ public class World_Behaviour : MonoBehaviour
 	{
 		public Vector3 direction;
 		public Mesh mesh;
+		public GameObject gameObject;
 	}
 
 	public GameObject[] worldObjectArray;
 
+	private void Awake()
+	{
+		var l = new List<GameObject>();
+		for(int i = 0; i < transform.childCount; ++i)
+		{
+			if (!transform.GetChild(i).gameObject.activeInHierarchy)
+			{
+				continue;
+			}
+			l.Add(transform.GetChild(i).gameObject);
+		}
+		worldObjectArray = l.ToArray();
+	}
+
 	public bool TryFindGravityAt(Vector3 wPoint, ref GravityData gravity)
 	{
-		if (!TryFindGameObjectAt(wPoint, out GameObject worldGameObject))
+		if (!TryFindGameObjectAt(wPoint, out gravity.gameObject))
 		{
 			return false;
 		}
 
-		Mesh mesh = worldGameObject.GetComponent<MeshCollider>().sharedMesh;
-		Matrix4x4 localToWorld = worldGameObject.transform.localToWorldMatrix;
+		Mesh mesh = gravity.gameObject.GetComponent<MeshCollider>().sharedMesh;
+		Matrix4x4 localToWorld = gravity.gameObject.transform.localToWorldMatrix;
 
 		var vertices = mesh.vertices;
 		float minDistance = float.MaxValue;
