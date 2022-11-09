@@ -17,16 +17,14 @@ public class RacerPhysic_Behaviour : MonoBehaviour
 
 	public World_Behaviour world;
 
-	public Vector3 outGravity;
-
 	public bool debugUseVerticalInputAxis = true;
 	public bool debugDrawGravity;
-	public string debugFailReason;
+
+	private float verticalSpeed = 0f;
 
     // Update is called once per frame
     void Update()
     {
-		debugFailReason = string.Empty;
 		// apply roll from input
 		//var hInputAxis = yawInput;
 		//if (hInputAxis == 0)
@@ -35,25 +33,25 @@ public class RacerPhysic_Behaviour : MonoBehaviour
 		//}
 
 		// move forward, find the new position
+		var updatedMaxSpeed = maxSpeed;
 		if (debugUseVerticalInputAxis)
 		{
-			maxSpeed *= Input.GetAxis("Vertical");
+			updatedMaxSpeed = maxSpeed * Input.GetAxis("Vertical");
 		}
-		var translation = transform.forward * maxSpeed * Time.deltaTime;
+		var translation = transform.forward * .5f; /** updatedMaxSpeed * Time.deltaTime*/;
 		var newPosition = transform.position + translation;
 
 		// find gravity, ground point at new position
 		World_Behaviour.GravityData gravity = default;
 		if (!world.TryFindGravityAt(newPosition, ref gravity))
 		{
-			debugFailReason = "gravity not found";
+			Debug.LogError("gravity not found");
 			return;
 		}
-
-		Ray r = new Ray(transform.position, outGravity);
+		Ray r = new Ray(newPosition, gravity.direction);
 		if (!Physics.Raycast(r, out RaycastHit groundHit))
 		{
-			debugFailReason = "ground not found";
+			Debug.LogError("ground not found");
 			return;
 		}
 
@@ -61,21 +59,64 @@ public class RacerPhysic_Behaviour : MonoBehaviour
 
 		if (!ComputeBarycentricGravity(gravity.mesh, groundHit, out Vector3 barycentricGravity))
 		{
-			debugFailReason = "barycentric gravity not found";
+			Debug.LogError("barycentric gravity not found");
 			return;
 		}
 
-		// are we above or below the hover point ?
-		//var hoverPoint = groundHit.point - barycentricGravity * hoverAltitude;
-		if ((newPosition - groundHit.point).sqrMagnitude > (-barycentricGravity * hoverAltitude).sqrMagnitude)
-		{ // above
-			// TODO, we need to be sure that we are on the right side of the world !
-		}
-		else
-		{ // below
+		var hoverPoint = groundHit.point - barycentricGravity * hoverAltitude;
 
+		Color debugColor = Color.white;
+		if (Vector3.Dot(-barycentricGravity, (newPosition - hoverPoint)) > 0)
+		{ // above hoverPoint
+			verticalSpeed += gravityAcceleration * Time.deltaTime;
+			newPosition += barycentricGravity * verticalSpeed * Time.deltaTime;
+			debugColor = Color.red;
 		}
 
+		if (Vector3.Dot(-barycentricGravity, (newPosition - hoverPoint)) < 0)
+		{ // below hoverPoint
+			verticalSpeed = 0f;
+			newPosition = hoverPoint;
+			debugColor = Color.green;
+		}
+		Debug.DrawLine(groundHit.point, hoverPoint, debugColor);
+		Debug.DrawLine(hoverPoint, newPosition, Color.magenta);
+
+		// compute the new forward
+		Vector3 newForward = (newPosition - transform.position).normalized;
+		Vector3 down = Vector3.Cross(transform.right, newForward);
+		transform.rotation = Quaternion.LookRotation(newForward, -down);
+		transform.position += newForward * Time.deltaTime * updatedMaxSpeed;
+		//if (TryGetGroundPoinAt(transform.position + transform.forward * .5f, out Vector3 forwardGoundPoint))
+		//{
+		//	Vector3 newForward = (forwardGoundPoint -groundHit.point).normalized;
+		//	Vector3 down = Vector3.Cross(transform.right, newForward);
+		//	transform.rotation = Quaternion.LookRotation(newForward, -down);
+		//}
+
+	}
+
+	bool TryGetGroundPoinAt(Vector3 position, out Vector3 forwardGrountPoint)
+	{
+		// find gravity, ground point at new position
+		World_Behaviour.GravityData gravity = default;
+		if (!world.TryFindGravityAt(position, ref gravity))
+		{
+			forwardGrountPoint = Vector3.zero;
+			Debug.LogError("gravity not found");
+			return false;
+		}
+		Ray r = new Ray(position, gravity.direction);
+		if (!Physics.Raycast(r, out RaycastHit groundHit))
+		{
+			forwardGrountPoint = Vector3.zero;
+			Debug.LogError("ground not found");
+			return false;
+		}
+
+		forwardGrountPoint = groundHit.point;
+
+		return true;
 	}
 
 	private bool ComputeBarycentricGravity(Mesh mesh, RaycastHit hit, out Vector3 barycentricGravity)

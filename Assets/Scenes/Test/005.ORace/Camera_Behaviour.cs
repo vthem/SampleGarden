@@ -4,27 +4,16 @@ using UnityEngine;
 
 public class Camera_Behaviour : MonoBehaviour
 {
-	public Racer_Behaviour racer;
+	public Transform target;
 
 	public Vector3 lookAtTargetVector;
 	public Vector3 positionTargetVector;
-
-	public float postionMaxSpeed = 1f;
-	[Range(0, 1f)] public float positionSmoothTime = 1f;
-
-	public float lookAtMaxSpeed = 1f;
-	[Range(0, 1f)] public float lookAtSmoothTime = 1f;
-
-	private Vector3 positionVelocity;
-	private Vector3 lookAtVelocity;
-
-	private Vector3 currentLookAtTargetPosition;
 
 	public Vector3 WorldPositionTargetPosition
 	{
 		get
 		{
-			return racer.transform.position + racer.transform.TransformVector(positionTargetVector);
+			return target.TransformPoint(positionTargetVector);
 		}
 	}
 
@@ -32,7 +21,7 @@ public class Camera_Behaviour : MonoBehaviour
 	{
 		get
 		{
-			return racer.transform.position + racer.transform.TransformVector(lookAtTargetVector);
+			return target.TransformPoint(lookAtTargetVector);
 		}
 	}
 
@@ -41,22 +30,20 @@ public class Camera_Behaviour : MonoBehaviour
 		ForcePositionAndRotation();
 	}
 
-	void Update()
+	void LateUpdate()
     {
-		transform.position = Vector3.SmoothDamp(transform.position, WorldPositionTargetPosition, ref positionVelocity, positionSmoothTime/*, postionMaxSpeed*/);
-		//currentLookAtTargetPosition = Vector3.SmoothDamp(currentLookAtTargetPosition, WorldLookAtTargetPosition, ref lookAtVelocity, lookAtSmoothTime/*, lookAtMaxSpeed*/);
-		//transform.LookAt(currentLookAtTargetPosition, -racer.gravityModule.outGravitySmooth);
-		//Debug.DrawLine(transform.position, currentLookAtTargetPosition, Color.yellow);
-		//Debug.DrawLine(transform.position, WorldLookAtTargetPosition, Color.magenta);
-		//transform.position = WorldPositionTargetPosition;
-		transform.LookAt(WorldLookAtTargetPosition, -racer.gravityModule.outBarycentricGravity);
+		InternalUpdate();
+	}
+
+	void InternalUpdate()
+	{
+		transform.position = WorldPositionTargetPosition;
+		transform.LookAt(WorldLookAtTargetPosition, target.up);
 	}
 
 	[ContextMenu("Force Position & Rotation")]
 	void ForcePositionAndRotation()
 	{
-		currentLookAtTargetPosition = WorldLookAtTargetPosition;
-		transform.position = WorldPositionTargetPosition;
-		transform.LookAt(currentLookAtTargetPosition);
+		InternalUpdate();
 	}
 }

@@ -229,6 +229,7 @@ GameObject:
   m_Component:
   - component: {fileID: 222953076}
   - component: {fileID: 222953075}
+  - component: {fileID: 222953077}
   m_Layer: 0
   m_Name: Racer
   m_TagString: Untagged
@@ -243,7 +244,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 222953074}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9f6b87f59806a2d4fb7c8b6782b4a5be, type: 3}
   m_Name: 
@@ -277,7 +278,7 @@ MonoBehaviour:
     maxSpeed: 10
   moveModule:
     enable: 1
-    maxSpeed: 10.2
+    maxSpeed: 5
   collisionModule:
     enable: 1
     hasHit: 0
@@ -289,7 +290,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 222953074}
   m_LocalRotation: {x: 0, y: -1, z: 0, w: 0}
-  m_LocalPosition: {x: 16.77, y: -10.55, z: 57.23}
+  m_LocalPosition: {x: 16.77, y: -8.498, z: 57.23}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 1896221294}
@@ -299,6 +300,25 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: -180, z: 0}
+--- !u!114 &222953077
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 222953074}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75b3ac22149d99e41a24ece2587d094a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  yawInput: 0
+  maxSpeed: 0
+  gravityAcceleration: 1
+  hoverAltitude: 1
+  world: {fileID: 495166161}
+  debugUseVerticalInputAxis: 0
+  debugDrawGravity: 1
 --- !u!1 &392880005
 GameObject:
   m_ObjectHideFlags: 0
@@ -851,7 +871,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 41b2a0b6df42fec4d94ec83cad3aa8cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  racer: {fileID: 222953075}
+  world: {fileID: 495166161}
+  target: {fileID: 222953076}
   eulerOffset: {x: -25, y: 0, z: 25}
 --- !u!1001 &972328587
 PrefabInstance:
@@ -1120,8 +1141,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1670208348}
-  m_LocalRotation: {x: 0.098537594, y: 0, z: 0, w: 0.99513334}
-  m_LocalPosition: {x: -16.62, y: 0.53, z: -4.1800003}
+  m_LocalRotation: {x: 0, y: 0.9978046, z: -0.0662272, w: 0}
+  m_LocalPosition: {x: 16.77, y: -9.55, z: 60.23}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -1172,13 +1193,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bc063d251c24cd34e9fa316ef03170ca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  racer: {fileID: 222953075}
+  target: {fileID: 222953076}
   lookAtTargetVector: {x: 0, y: 0.6, z: 0}
-  positionTargetVector: {x: 0, y: 1, z: -2}
-  postionMaxSpeed: 75
-  positionSmoothTime: 0.25
-  lookAtMaxSpeed: 50
-  lookAtSmoothTime: 0.5
+  positionTargetVector: {x: 0, y: 1, z: -3}
 --- !u!1 &1875017724
 GameObject:
   m_ObjectHideFlags: 0
